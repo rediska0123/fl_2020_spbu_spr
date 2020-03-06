@@ -1,6 +1,7 @@
 module Arith where 
 
 import Text.Printf (printf)
+import Text.Read
 import Data.Char (isDigit, digitToInt)
 import qualified Sum (parseNum, splitOn) 
 
@@ -23,7 +24,8 @@ data AST = BinOp Operator AST AST
 -- Между числами и знаками операций по одному пробелу
 -- BinOp Plus (Num 13) (Num 42) -> "13 42 +"
 toPostfix :: AST -> String
-toPostfix ast = error "toPostfix not implemented"
+toPostfix (Num x) = show x
+toPostfix (BinOp op x y) = (toPostfix x) ++ " " ++ (toPostfix y) ++ " " ++ show op
 
 -- Парсит выражение в постфиксной записи 
 -- Выражение принимается только целиком (не максимально длинный префикс)
@@ -32,27 +34,41 @@ toPostfix ast = error "toPostfix not implemented"
 -- "1 2 3 +" -> Nothing
 -- "1 2 + *" -> Nothing 
 fromPostfix :: String -> Maybe AST 
-fromPostfix input = error "fromPostfix not implemented"
+fromPostfix input = helper (words input) [] where
+    op c = let Just (res, "") = parseOp c in res
+    helper [] [res]       = Just res
+    helper [] stack       = Nothing
+    helper (w:xs) stack = case ((readMaybe w)::Maybe Int) of
+        Just num -> helper xs ((Num num):stack)
+        Nothing -> case stack of
+            a:b:as -> helper xs ((BinOp (op w) b a):as)
+            _      -> Nothing
 
 -- Парсит левую скобку
 parseLbr :: String -> Maybe ((), String)
-parseLbr = error "parseLbr not implemented"
+parseLbr ('(':xs) = Just ((), xs)
+parseLbr _        = Nothing
 
 -- Парсит правую скобку
 parseRbr :: String -> Maybe ((), String)
-parseRbr = error "parseRbr not implemented"
+parseRbr (')':xs) = Just ((), xs)
+parseRbr _        = Nothing
 
 parseExpr :: String -> Maybe (AST, String)
 parseExpr input = parseSum input
 
-parseNum :: String -> Maybe (AST, String) 
+parseNum :: String -> Maybe (AST, String)
 parseNum input = 
-    let (num, rest) = span isDigit input in 
-    case num of 
-      [] -> Nothing  
-      xs -> Just (Num $ Sum.parseNum xs, rest)
-  
-  
+    let (num, rest) = span isDigit input in
+        case num of
+        [] -> case parseLbr input of
+            Just (_, xs) -> do
+                (ast, ys) <- parseExpr xs
+                (_, zs) <- parseRbr ys
+                return (ast, zs)
+            Nothing -> Nothing
+        xs -> Just (Num $ parseNum_ xs, rest)
+
 parseOp :: String -> Maybe (Operator, String)
 parseOp ('+':xs) = Just (Plus, xs)
 parseOp ('*':xs) = Just (Mult, xs)
