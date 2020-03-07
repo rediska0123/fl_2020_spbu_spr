@@ -67,7 +67,7 @@ parseNum input =
                 (_, zs) <- parseRbr ys
                 return (ast, zs)
             Nothing -> Nothing
-        xs -> Just (Num $ parseNum_ xs, rest)
+        xs -> Just (Num $ Sum.parseNum xs, rest)
 
 parseOp :: String -> Maybe (Operator, String)
 parseOp ('+':xs) = Just (Plus, xs)
