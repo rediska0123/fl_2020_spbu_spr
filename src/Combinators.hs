@@ -69,7 +69,7 @@ epsilon = success ()
 success :: a -> Parser e i a
 success = pure
 
---- Всегда завершается ошибкой
+-- Всегда завершается ошибкой
 fail' :: e -> Parser e i a
 fail' = Parser . const . Failure
 
