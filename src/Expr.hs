@@ -2,7 +2,7 @@ module Expr where
 
 import           AST         (AST (..), Operator (..))
 import           Combinators (Parser (..), Result (..), elem', fail',
-                              satisfy, success)
+                              satisfy, success, symbol)
 import           Data.Char   (digitToInt, isDigit)
 import           Control.Monad
 import           Control.Applicative
@@ -18,13 +18,38 @@ uberExpr :: Monoid e
          -> Parser e i ast -- парсер для элементарного выражения
          -> (op -> ast -> ast -> ast) -- функция для создания абстрактного синтаксического дерева для бинарного оператора
          -> Parser e i ast
-uberExpr = error "uberExpr undefined"
+uberExpr ops elem constr =
+  foldr f elem ops where
+    f (op, NoAssoc) elem1 = do
+      x <- elem1
+      ((\o -> constr o x) <$> op <*> elem1) <|> return x
+
+    f (op, assoc) elem1 = do
+        x <- elem1
+        let all = many ((,) <$> op <*> elem1) in do
+          (fold' assoc x) <$> all
+
+    fold' LeftAssoc x =
+      foldl (\v1 (op, v2) -> constr op v1 v2) x
+    fold' RightAssoc x = \list -> snd $
+      foldr1 (\(op1, v1) (op2, v2) -> (op1, constr op2 v1 v2)) ((undefined, x):list)
+
+
+plus  = symbol '+' >>= toOperator
+minus = symbol '-' >>= toOperator
+mult  = symbol '*' >>= toOperator
+div'  = symbol '/' >>= toOperator
+pow   = symbol '^' >>= toOperator
 
 -- Парсер для выражений над +, -, *, /, ^ (возведение в степень)
 -- с естественными приоритетами и ассоциативностью над натуральными числами с 0.
 -- В строке могут быть скобки
 parseExpr :: Parser String String AST
-parseExpr = error "parseExpr undefined"
+parseExpr = uberExpr [(plus <|> minus, LeftAssoc),
+                      (mult <|> div', LeftAssoc),
+                      (pow, RightAssoc)]
+                     (Num <$> parseNum <|> symbol '(' *> parseExpr <* symbol ')')
+                     BinOp
 
 -- Парсер для натуральных чисел с 0
 parseNum :: Parser String String Int
