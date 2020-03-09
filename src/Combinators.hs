@@ -11,53 +11,46 @@ newtype Parser error input result
   = Parser { runParser :: input -> Result error input result }
 
 instance Functor (Parser error input) where
-  fmap = error "fmap not implemented"
+  fmap f (Parser runp) = Parser $ \inp ->
+    case runp inp of
+      Failure err      -> Failure err
+      Success inp1 res -> Success inp1 $ f res
 
 instance Applicative (Parser error input) where
-  pure = error "pure not implemented"
-  (<*>) = error "<*> not implemented"
+  pure x = Parser $ \inp -> Success inp x
+  (Parser r1) <*> (Parser r2) = Parser $ \inp ->
+    case r1 inp of
+      Failure err    -> Failure err
+      Success inp1 f ->
+        case r2 inp1 of
+          Failure err    -> Failure err
+          Success inp2 x -> Success inp2 $ f x
 
 instance Monad (Parser error input) where
-  return = error "return not implemented"
-
-  (>>=) = error ">>= not implemented"
+  (Parser r1) >>= f = Parser $ \inp ->
+    case r1 inp of
+      Failure err    -> Failure err
+      Success inp1 x -> runParser (f x) inp1
 
 instance Monoid error => Alternative (Parser error input) where
-  empty = error "empty not implemented"
-
-  (<|>) = error "<|> not implemented"
+  empty = Parser $ \inp -> Failure mempty
+  (Parser r1) <|> (Parser r2) = Parser $ \inp -> case r1 inp of
+    Failure _  -> r2 inp
+    x          -> x
 
 -- Принимает последовательность элементов, разделенных разделителем
 -- Первый аргумент -- парсер для разделителя
 -- Второй аргумент -- парсер для элемента
 -- В последовательности должен быть хотя бы один элемент
-sepBy1 :: Parser e i sep -> Parser e i a -> Parser e i [a]
-sepBy1 sep elem = error "sepBy1 not implemented"
-
--- Альтернатива: в случае неудачи разбора первым парсером, парсит вторым
-alt' :: Parser e i a -> Parser e i a -> Parser e i a
-alt' p q = Parser $ \input ->
-  case runParser p input of
-    Failure _ -> runParser q input
-    x         -> x
-
--- Последовательное применение парсеров:
--- если первый парсер успешно принимает префикс строки, второй запускается на суффиксе.
--- Второй парсер использует результат первого.
-bind' :: Parser e i a
-      -> (a -> Parser e i b)
-      -> Parser e i b
-bind' p f = Parser $ \input ->
-  case runParser p input of
-    Success i r -> runParser (f r) i
-    Failure e   -> Failure e
+sepBy1 :: Monoid e => Parser e i sep -> Parser e i a -> Parser e i [a]
+sepBy1 sep elem = (:) <$> elem <*> (many (sep *> elem))
 
 -- Проверяет, что первый элемент входной последовательности -- данный символ
 symbol :: Char -> Parser String String Char
 symbol c = satisfy (== c)
 
 -- Успешно завершается, если последовательность содержит как минимум один элемент
-elem' :: (Show a) => Parser String [a] a
+elem' :: Show a => Parser String [a] a
 elem' = satisfy (const True)
 
 -- Проверяет, что первый элемент входной последовательности удовлетворяет предикату
@@ -74,27 +67,9 @@ epsilon = success ()
 
 -- Всегда завершается успехом, вход не читает, возвращает данное значение
 success :: a -> Parser e i a
-success a = Parser $ \input -> Success input a
+success = pure
 
--- Всегда завершается ошибкой
+--- Всегда завершается ошибкой
 fail' :: e -> Parser e i a
 fail' = Parser . const . Failure
 
--- Проверяет, что первый элемент входной последовательности -- данный символ
-fmap' :: (a -> b) -> Parser e i a -> Parser e i b
-fmap' f p = Parser $ \input ->
-  case runParser p input of
-    Success i a -> Success i (f a)
-    Failure e   -> Failure e
-
--- Последовательное применения одного и того же парсера 1 или более раз
-some' :: Parser e i a -> Parser e i [a]
-some' p =
-  p `bind'` \a ->
-  many' p `bind'` \as ->
-  success (a : as)
-
--- Последовательное применение одного и того же парсера 0 или более раз
-many' :: Parser e i a -> Parser e i [a]
-many' p =
-  some' p `alt'` success []

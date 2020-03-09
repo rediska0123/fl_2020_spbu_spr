@@ -1,9 +1,10 @@
 module Expr where
 
 import           AST         (AST (..), Operator (..))
-import           Combinators (Parser (..), Result (..), bind', elem', fail',
-                              fmap', satisfy, some', success)
+import           Combinators (Parser (..), Result (..), elem', fail',
+                              satisfy, success)
 import           Data.Char   (digitToInt, isDigit)
+import           Control.Monad
 
 data Associativity
   = LeftAssoc  -- 1 @ 2 @ 3 @ 4 = (((1 @ 2) @ 3) @ 4)
@@ -26,14 +27,14 @@ parseExpr = error "parseExpr undefined"
 
 -- Парсер для натуральных чисел с 0
 parseNum :: Parser String String Int
-parseNum = foldl (\acc d -> 10 * acc + digitToInt d) 0 `fmap'` go
+parseNum = foldl (\acc d -> 10 * acc + digitToInt d) 0 `fmap` go
   where
     go :: Parser String String String
-    go = some' (satisfy isDigit)
+    go = some (satisfy isDigit)
 
 -- Парсер для операторов
 parseOp :: Parser String String Operator
-parseOp = elem' `bind'` toOperator
+parseOp = elem' >>= toOperator
 
 -- Преобразование символов операторов в операторы
 toOperator :: Char -> Parser String String Operator
