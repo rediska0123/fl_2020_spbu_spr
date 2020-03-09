@@ -3,6 +3,7 @@ module Test.Combinators where
 import           Combinators      (Parser, Result (..), elem', runParser,
                                    satisfy, sepBy1, symbol)
 import           Test.Tasty.HUnit (Assertion, (@?=))
+import           Control.Applicative
 
 predErrMsg :: String
 predErrMsg = "Predicate failed"

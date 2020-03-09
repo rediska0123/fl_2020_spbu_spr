@@ -5,6 +5,7 @@ import           Combinators (Parser (..), Result (..), elem', fail',
                               satisfy, success)
 import           Data.Char   (digitToInt, isDigit)
 import           Control.Monad
+import           Control.Applicative
 
 data Associativity
   = LeftAssoc  -- 1 @ 2 @ 3 @ 4 = (((1 @ 2) @ 3) @ 4)
