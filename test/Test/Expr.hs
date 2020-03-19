@@ -35,8 +35,31 @@ unit_parseNum = do
     runParser parseNum "7" @?= Success "" 7
     runParser parseNum "12+3" @?= Success "+3" 12
     runParser parseNum "007" @?= Success "" 7
-    isFailure (runParser parseNum "+3") @?= True
-    isFailure (runParser parseNum "a") @?= True
+    assertBool "" $ isFailure (runParser parseNum "+3")
+    assertBool "" $ isFailure (runParser parseNum "a")
+
+unit_parseNegNum :: Assertion
+unit_parseNegNum = do
+    runParser parseNum "123" @?= Success "" 123
+    runParser parseNum "-123" @?= Success "" (-123)
+    runParser parseNum "--123" @?= Success "" 123
+    assertBool "" $ isFailure $ runParser parseNum "+-3"
+    assertBool "" $ isFailure $ runParser parseNum "-+3"
+    assertBool "" $ isFailure $ runParser parseNum "-a"
+
+unit_parseIdent :: Assertion
+unit_parseIdent = do
+    runParser parseIdent "abc def" @?= Success " def" "abc"
+    runParser parseIdent "AbC dEf" @?= Success " dEf" "AbC"
+    runParser parseIdent "_123" @?= Success "" "_123"
+    runParser parseIdent "a_b_c d_e" @?= Success " d_e" "a_b_c"
+    runParser parseIdent "x_ " @?= Success " " "x_"
+    runParser parseIdent "abc123" @?= Success "" "abc123"
+    runParser parseIdent "_" @?= Success "" "_"
+    runParser parseIdent "abc*1" @?= Success "*1" "abc"
+    assertBool "" $ isFailure $ runParser parseIdent "123abc"
+    assertBool "" $ isFailure $ runParser parseIdent "123"
+    assertBool "" $ isFailure $ runParser parseIdent ""
 
 unit_parseNegNum :: Assertion
 unit_parseNegNum = do
@@ -77,7 +100,7 @@ unit_parseOp = do
     runParser parseOp "&&a" @?= Success "a" And
     runParser parseOp "-2" @?= Success "2" Minus
     runParser parseOp "/1" @?= Success "1" Div
-    isFailure (runParser parseOp "12") @?= True
+    assertBool "" $ isFailure (runParser parseOp "12")
 
 
 unit_parseStr :: Assertion
@@ -149,7 +172,7 @@ unit_expr1 = do
 unit_expr2 :: Assertion
 unit_expr2 = do
   runParser expr2 "13" @?= Success "" (Num 13)
-  runParser expr2 "(((1)))" @?= Failure "Predicate failed"
+  assertBool "" $ isFailure $ runParser expr2 "(((1)))"
   runParser expr2 "1+2*3-4/5" @?= Success "" (BinOp Div (BinOp Minus (BinOp Mult (BinOp Plus (Num 1) (Num 2)) (Num 3)) (Num 4)) (Num 5))
   runParser expr2 "1+2+3" @?= Success "" (BinOp Plus (BinOp Plus (Num 1) (Num 2)) (Num 3))
   runParser expr2 "1*2*3" @?= Success "" (BinOp Mult (BinOp Mult (Num 1) (Num 2)) (Num 3))
