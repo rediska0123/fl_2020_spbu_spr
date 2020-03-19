@@ -79,6 +79,13 @@ unit_parseOp = do
     runParser parseOp "/1" @?= Success "1" Div
     isFailure (runParser parseOp "12") @?= True
 
+
+unit_parseStr :: Assertion
+unit_parseStr = do
+    runParser (parseStr "12w") "12wde" @?= Success "de" "12w"
+    runParser (parseStr "12w") "12de" @?= Failure "Predicate failed"
+    runParser (parseStr "12") "12de" @?= Success "de" "12"
+
 unit_parseExpr :: Assertion
 unit_parseExpr = do
     runParser parseExpr "1*2*3"   @?= Success "" (BinOp Mult (BinOp Mult (Num 1) (Num 2)) (Num 3))
