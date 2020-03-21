@@ -1,0 +1,149 @@
+\documentclass[12pt,a4paper]{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\usepackage{misccorr}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{ marvosym }
+\usepackage{color,soul}
+\usepackage{upgreek}
+\usepackage{gensymb}
+
+% Основные математические символы
+\DeclareSymbolFont{extraup}{U}{zavm}{m}{n}
+\DeclareMathSymbol{\heart}{\mathalpha}{extraup}{86}
+\newcommand{\N}{\mathbb{N}}   % Natural numbers
+\newcommand{\R}{\mathbb{R}}   % Ratio numbers
+\newcommand{\Z}{\mathbb{Z}}   % Integer numbers
+\def\INF{\t{+}\infty}         % +inf
+\def\EPS{\varepsilon}         %
+\def\EMPTY{\varnothing}       %
+\def\PHI{\varphi}             %
+\def\SO{\Rightarrow}          % =>
+\def\EQ{\Leftrightarrow}      % <=>
+\def\t{\texttt}               % mono font
+\def\c#1{{\rm\sc{#1}}}        % font for classes NP, SAT, etc
+\def\O{\mathcal{O}}           %
+\def\NO{\t{\#}}               % #
+\renewcommand{\le}{\leqslant} % <=, beauty
+\renewcommand{\ge}{\geqslant} % >=, beauty
+\def\XOR{\text{ {\raisebox{-2pt}{\ensuremath{\Hat{}}}} }}
+\newcommand{\q}[1]{\langle #1 \rangle}               % <x>
+\newcommand\URL[1]{{\footnotesize{\url{#1}}}}        %
+\newcommand{\sfrac}[2]{{\scriptstyle\frac{#1}{#2}}}  % Очень маленькая дробь
+\newcommand{\mfrac}[2]{{\textstyle\frac{#1}{#2}}}    % Небольшая дробь
+\newcommand{\score}[1]{{\bf\color{red}{(#1)}}}
+\newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
+
+% Отступы
+\def\makeparindent{\hspace*{\parindent}}
+\def\up{\vspace*{-0.3em}}
+\def\down{\vspace*{0.3em}}
+\def\LINE{\vspace*{-1em}\noindent \underline{\hbox to 1\textwidth{{ } \hfil{ } \hfil{ } }}}
+%\def\up{\vspace*{-\baselineskip}}
+
+\newenvironment{smallformula}{
+	
+	\vspace*{-0.8em}
+}{
+	\vspace*{-1.2em}
+	
+}
+\newenvironment{formula}{
+	
+	\vspace*{-0.4em}
+}{
+	\vspace*{-0.6em}
+	
+}
+
+\begin{document}
+	\section*{Формальные языки}
+	\subsection*{Домашнее задание 5}
+	\begin{flushright}
+		Фадеева Екатерина
+	\end{flushright}
+
+\begin{description}
+	\item[\fbox{2.}]
+	$\begin{cases}
+		\text{S} \rightarrow \text{R S | R}\\
+		\text{R} \rightarrow \text{a S b | c R d | a b | c d | } \epsilon
+	\end{cases}$
+
+	Уберём длинные правила:
+	
+	$\begin{cases}
+		\text{S} \rightarrow \text{R S | R}\\
+		\text{R} \rightarrow \text{a X | c Y | a b | c d | } \epsilon\\
+		\text{X} \rightarrow \text{S b}\\
+		\text{Y} \rightarrow \text{R d}
+	\end{cases}$
+	
+	Удалим $\epsilon$-правила:
+	
+	$\begin{cases}
+		\text{S} \rightarrow \text{R S | R | S | } \epsilon\\
+		\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
+		\text{X} \rightarrow \text{S b}\\
+		\text{Y} \rightarrow \text{R d | d}
+	\end{cases}$
+	
+	
+	Удалим цепные правила (цепные пары --- $(S, S)$ и $(S, R)$):
+	
+	$\begin{cases}
+		\text{S} \rightarrow \text{R S | a X | c Y | a b | c d | } \epsilon\\
+		\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
+		\text{X} \rightarrow \text{S b}\\
+		\text{Y} \rightarrow \text{R d | d}
+	\end{cases}$	
+		
+	Удалять бесполезные нетерминалы не нужно: все символы достижимы (например из $S$ за один шаг), все нетерминалы порождающие ($\text{S} \rightarrow \text{ab}, \text{R} \rightarrow \text{ab}, \text{X} \rightarrow \text{Sb} \rightarrow \text{abb}, \text{Y} \rightarrow \text{d}$)
+	
+	Уберем правила из нетерминала в терминалы:
+	
+	$\begin{cases}
+		\text{S} \rightarrow \text{R S | A X | C Y | A B | C D | } \epsilon\\
+		\text{R} \rightarrow \text{A X | C Y | A B | C D}\\
+		\text{X} \rightarrow \text{S B}\\
+		\text{Y} \rightarrow \text{R D | d}\\
+		\text{A} \rightarrow \text{a}\\
+		\text{B} \rightarrow \text{b}\\
+		\text{C} \rightarrow \text{c}\\
+		\text{D} \rightarrow \text{d}
+	\end{cases}$ \\--- грамматика в нормальной форме Хомского.
+
+	\item[\fbox{3.}] Язык $\{ a^m b^n\,\,|\,\,m + n > 0, m + n\,\,\vdots\,\, 2 \}$ явяется контекстно-свободным, грамматика:
+	
+	$\begin{cases}
+		\text{S} \rightarrow \text{a a S | S b b | a S b | a b | a a | b b}
+	\end{cases}$
+	
+	Любые строки, которые описывает эта грамматика, --- одна из строк $\text{a b | a a | b b}$, к которой сколько угодно раз проделывали какие-то из этих операций:
+	
+	\begin{enumerate}
+		\item дописывали слева две буквы $a$
+		
+		\item дописывали справа две буквы $b$
+	
+		\item дописывали слева $a$ и справа $b$.
+	\end{enumerate}
+	
+	Тогда в любой такой строке после букв $a$ следуют буквы $b$, и их суммарное количество четно (т.к. изначатьно во всех строках $\text{a b | a a | b b}$ оно четно и мы дописываем только четное количество символов).
+	
+	В другую сторону: для любой строки $a^mb^n$ при $m+n > 0$ и $\vdots \,\, 2$:
+	
+	\begin{enumerate}
+		\item либо в ней $n=0$, а значит $m \,\,\vdots\,\,2$, т.е. эту строку можно сделать из $aa$ несколькими добавлениями слева букв $aa$
+		\item либо в ней $m=0$, тогда можно сделать аналогично добавлениями к $bb$ букв $bb$ справа
+		\item либо $n \neq 0, m \neq 0$, тогда можно сделать такую строку из строки $ab$ добавлениями букв $aa$ слева ($\lfloor\frac{m-1}{2}\rfloor$ раз) и $bb$ справа ($\lfloor\frac{n-1}{2}\rfloor$ раз) и если $n \vdots 2$ и $m \vdots 2$, то еще одним добавлением $a$ слева и $b$ справа.
+	\end{enumerate}
+
+	Т.о. приведенная грамматика содержит все строки исходного языка и не содержит других строк, значит она описывает этот язык.
+	
+	
+\end{description}
+
+\end{document}
