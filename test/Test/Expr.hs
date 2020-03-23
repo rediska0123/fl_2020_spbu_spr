@@ -43,29 +43,6 @@ unit_parseNegNum = do
     runParser parseNum "123" @?= Success "" 123
     runParser parseNum "-123" @?= Success "" (-123)
     runParser parseNum "--123" @?= Success "" 123
-    assertBool "" $ isFailure $ runParser parseNum "+-3"
-    assertBool "" $ isFailure $ runParser parseNum "-+3"
-    assertBool "" $ isFailure $ runParser parseNum "-a"
-
-unit_parseIdent :: Assertion
-unit_parseIdent = do
-    runParser parseIdent "abc def" @?= Success " def" "abc"
-    runParser parseIdent "AbC dEf" @?= Success " dEf" "AbC"
-    runParser parseIdent "_123" @?= Success "" "_123"
-    runParser parseIdent "a_b_c d_e" @?= Success " d_e" "a_b_c"
-    runParser parseIdent "x_ " @?= Success " " "x_"
-    runParser parseIdent "abc123" @?= Success "" "abc123"
-    runParser parseIdent "_" @?= Success "" "_"
-    runParser parseIdent "abc*1" @?= Success "*1" "abc"
-    assertBool "" $ isFailure $ runParser parseIdent "123abc"
-    assertBool "" $ isFailure $ runParser parseIdent "123"
-    assertBool "" $ isFailure $ runParser parseIdent ""
-
-unit_parseNegNum :: Assertion
-unit_parseNegNum = do
-    runParser parseNum "123" @?= Success "" 123
-    runParser parseNum "-123" @?= Success "" (-123)
-    runParser parseNum "--123" @?= Success "" 123
     runParser parseNum "---123" @?= Success "" (-123)
     assertBool "" $ isFailure $ runParser parseNum "+-3"
     assertBool "" $ isFailure $ runParser parseNum "-"

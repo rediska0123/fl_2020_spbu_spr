@@ -82,9 +82,6 @@ parseIdent = (:) <$> (satisfy isLetter <|> symbol '_') <*>
 parseStr :: String -> Parser String String String
 parseStr = foldr (\x acc -> (:) <$> symbol x <*> acc) (pure "")
 
-parseIdent :: Parser String String String
-parseIdent = error "parseIdent undefined"
-
 -- Парсер для операторов
 parseOp :: Parser String String Operator
 parseOp = foldr (\op acc -> (toOperator op <* parseStr op) <|> acc) (fail' "Failed parseOp")
