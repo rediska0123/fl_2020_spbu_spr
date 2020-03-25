@@ -68,52 +68,65 @@
 \begin{description}
 	\item[\fbox{2.}]
 	$\begin{cases}
-		\text{S} \rightarrow \text{R S | R}\\
-		\text{R} \rightarrow \text{a S b | c R d | a b | c d | } \epsilon
+	\text{S} \rightarrow \text{R S | R}\\
+	\text{R} \rightarrow \text{a S b | c R d | a b | c d | } \epsilon
 	\end{cases}$
-
+	
 	Уберём длинные правила:
 	
 	$\begin{cases}
-		\text{S} \rightarrow \text{R S | R}\\
-		\text{R} \rightarrow \text{a X | c Y | a b | c d | } \epsilon\\
-		\text{X} \rightarrow \text{S b}\\
-		\text{Y} \rightarrow \text{R d}
+	\text{S} \rightarrow \text{R S | R}\\
+	\text{R} \rightarrow \text{a X | c Y | a b | c d | } \epsilon\\
+	\text{X} \rightarrow \text{S b}\\
+	\text{Y} \rightarrow \text{R d}
 	\end{cases}$
 	
 	Удалим $\epsilon$-правила:
 	
 	$\begin{cases}
-		\text{S} \rightarrow \text{R S | R | S | } \epsilon\\
-		\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
-		\text{X} \rightarrow \text{S b}\\
-		\text{Y} \rightarrow \text{R d | d}
+	\text{S} \rightarrow \text{R S | R | S | } \epsilon\\
+	\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
+	\text{X} \rightarrow \text{S b}\\
+	\text{Y} \rightarrow \text{R d | d}
+	\end{cases}$
+	
+	Создадим новое стартовое состояние:
+	
+	$\begin{cases}
+	\text{S} \rightarrow \text{S' | } \epsilon\\
+	\text{S'} \rightarrow \text{R S' | R | S' } \\
+	\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
+	\text{X} \rightarrow \text{S' b}\\
+	\text{Y} \rightarrow \text{R d | d}
 	\end{cases}$
 	
 	
-	Удалим цепные правила (цепные пары --- $(S, S)$ и $(S, R)$):
+	Удалим цепные правила (цепные пары --- $(S, S')$, $(S', S')$, $(S', R)$):
 	
 	$\begin{cases}
-		\text{S} \rightarrow \text{R S | a X | c Y | a b | c d | } \epsilon\\
-		\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
-		\text{X} \rightarrow \text{S b}\\
-		\text{Y} \rightarrow \text{R d | d}
+	\text{S} \rightarrow \text{R S' | a X | c Y | a b | c d | } \epsilon\\
+	\text{S'} \rightarrow \text{R S' | a X | c Y | a b | c d } \\
+	\text{R} \rightarrow \text{a X | c Y | a b | c d}\\
+	\text{X} \rightarrow \text{S' b}\\
+	\text{Y} \rightarrow \text{R d | d}
 	\end{cases}$	
-		
-	Удалять бесполезные нетерминалы не нужно: все символы достижимы (например из $S$ за один шаг), все нетерминалы порождающие ($\text{S} \rightarrow \text{ab}, \text{R} \rightarrow \text{ab}, \text{X} \rightarrow \text{Sb} \rightarrow \text{abb}, \text{Y} \rightarrow \text{d}$)
+	
+	Удалять бесполезные нетерминалы не нужно: все символы достижимы (например из $S$ за один шаг), все нетерминалы порождающие ($\text{S} \rightarrow \text{ab}, \text{S'} \rightarrow \text{ab}, \text{R} \rightarrow \text{ab}, \text{X} \rightarrow \text{S'b} \rightarrow \text{abb}, \text{Y} \rightarrow \text{d}$).
 	
 	Уберем правила из нетерминала в терминалы:
 	
 	$\begin{cases}
-		\text{S} \rightarrow \text{R S | A X | C Y | A B | C D | } \epsilon\\
-		\text{R} \rightarrow \text{A X | C Y | A B | C D}\\
-		\text{X} \rightarrow \text{S B}\\
-		\text{Y} \rightarrow \text{R D | d}\\
-		\text{A} \rightarrow \text{a}\\
-		\text{B} \rightarrow \text{b}\\
-		\text{C} \rightarrow \text{c}\\
-		\text{D} \rightarrow \text{d}
+	\text{S} \rightarrow \text{R S' | A X | C Y | A B | C D | } \epsilon\\
+	\text{S'} \rightarrow \text{R S' | A X | C Y | A B | C D } \\
+	\text{R} \rightarrow \text{A X | C Y | A B | C D}\\
+	\text{X} \rightarrow \text{S' B}\\
+	\text{Y} \rightarrow \text{R D | D}\\
+	\text{A} \rightarrow \text{a}\\
+	\text{B} \rightarrow \text{b}\\
+	\text{C} \rightarrow \text{c}\\
+	\text{D} \rightarrow \text{d}
 	\end{cases}$ \\--- грамматика в нормальной форме Хомского.
+
 
 	\item[\fbox{3.}] Язык $\{ a^m b^n\,\,|\,\,m + n > 0, m + n\,\,\vdots\,\, 2 \}$ явяется контекстно-свободным, грамматика:
 	
