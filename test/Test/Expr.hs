@@ -90,7 +90,7 @@ unit_parseExpr = do
     runParser parseExpr "(1==x+2)||3*4<y-5/6&&(7/=z^8)||(id>12)&&abc<=13||xyz>=42" @?=
       runParser parseExpr "(1==(x+2))||(((3*4)<(y-(5/6))&&(7/=(z^8)))||(((id>12)&&(abc<=13))||(xyz>=42)))"
 
-unit_unaryEpxr = do
+unit_unaryExpr = do
     runParser parseExpr "-1+2" @?= Success "" (BinOp Plus (UnaryOp Minus (Num 1)) (Num 2))
     runParser parseExpr "-1*2" @?= Success "" (BinOp Mult (UnaryOp Minus (Num 1)) (Num 2))
     runParser parseExpr "-1==2" @?= Success "" (BinOp Equal (UnaryOp Minus (Num 1)) (Num 2))
@@ -108,6 +108,7 @@ unit_unaryEpxr = do
     runParser parseExpr "-1^-2" @?= Success "^-2" (UnaryOp Minus (Num 1))
 
     assertBool "" $ isFailure $ runParser parseExpr "--1"
+    assertBool "" $ isFailure $ runParser parseExpr "!!1"
     assertBool "" $ isFailure $ runParser parseExpr "-!1"
 
 mult  = Mult  <$ symbol '*'
