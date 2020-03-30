@@ -15,9 +15,11 @@ data Operator = Plus
               | Le
               | And
               | Or
+              | Not
               deriving (Eq)
 
 data AST = BinOp Operator AST AST
+         | UnaryOp Operator AST
          | Ident String
          | Num  Int
          deriving (Eq)
