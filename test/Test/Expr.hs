@@ -4,8 +4,8 @@ import           AST                 (AST (..), Operator (..))
 import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           Control.Applicative ((<|>))
-import           Expr                (Associativity (..), evaluate, parseExpr,
-                                      parseNum, parseOp, toOperator, uberExpr, parseIdent, OpType (..))
+import           Expr                (Associativity (..), evaluate, parseExpr, parseStr,
+                                      parseNum, uberExpr, parseIdent, OpType (..))
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
 
 isFailure (Failure _) = True
@@ -29,6 +29,15 @@ unit_evaluate = do
     evaluate "((1-(2*3))+4)" @?= Just ((1-(2*3))+4)
     evaluate "1-2+3-4" @?= Just (1-2+3-4)
     evaluate "6/2*3" @?= Just (6 `div` 2 * 3)
+    evaluate "2^2" @?= Just (2^2)
+    evaluate "2^2" @?= Just (2^2)
+    evaluate "!0" @?= Just 1
+    evaluate "-5" @?= Just (-5)
+    evaluate "(-2)^2" @?= Just ((-2)^2)
+    evaluate "-2^2" @?= Just (-2^2)
+    evaluate "2&&2" @?= Just 1
+    evaluate "2||0" @?= Just 1
+    evaluate "3>=2&&3>2&&2<3&&2<=3&&1==1&&2/=3" @?= Just 1
 
 unit_parseNum :: Assertion
 unit_parseNum = do
@@ -37,15 +46,6 @@ unit_parseNum = do
     runParser parseNum "007" @?= Success "" 7
     assertBool "" $ isFailure (runParser parseNum "+3")
     assertBool "" $ isFailure (runParser parseNum "a")
-
-unit_parseNegNum :: Assertion
-unit_parseNegNum = do
-    runParser parseNum "123" @?= Success "" 123
-    runParser parseNum "-123" @?= Success "" (-123)
-    runParser parseNum "--123" @?= Success "" 123
-    assertBool "" $ isFailure $ runParser parseNum "+-3"
-    assertBool "" $ isFailure $ runParser parseNum "-+3"
-    assertBool "" $ isFailure $ runParser parseNum "-a"
 
 unit_parseIdent :: Assertion
 unit_parseIdent = do
@@ -60,14 +60,6 @@ unit_parseIdent = do
     assertBool "" $ isFailure $ runParser parseIdent "123abc"
     assertBool "" $ isFailure $ runParser parseIdent "123"
     assertBool "" $ isFailure $ runParser parseIdent ""
-
-unit_parseOp :: Assertion
-unit_parseOp = do
-    runParser parseOp "+1" @?= Success "1" Plus
-    runParser parseOp "**" @?= Success "*" Mult
-    runParser parseOp "-2" @?= Success "2" Minus
-    runParser parseOp "/1" @?= Success "1" Div
-    assertBool "" $ isFailure (runParser parseOp "12")
 
 unit_parseExpr :: Assertion
 unit_parseExpr = do
@@ -93,6 +85,8 @@ unit_parseExpr = do
     runParser parseExpr "1<=x" @?= Success "" (BinOp Le (Num 1) (Ident "x"))
     runParser parseExpr "1&&x" @?= Success "" (BinOp And (Num 1) (Ident "x"))
     runParser parseExpr "1||x" @?= Success "" (BinOp Or (Num 1) (Ident "x"))
+    runParser parseExpr "-x" @?= Success "" (UnaryOp Minus (Ident "x"))
+    runParser parseExpr "!x" @?= Success "" (UnaryOp Not (Ident "x"))
     runParser parseExpr "(1==x+2)||3*4<y-5/6&&(7/=z^8)||(id>12)&&abc<=13||xyz>=42" @?=
       runParser parseExpr "(1==(x+2))||(((3*4)<(y-(5/6))&&(7/=(z^8)))||(((id>12)&&(abc<=13))||(xyz>=42)))"
 
@@ -116,10 +110,10 @@ unit_unaryEpxr = do
     assertBool "" $ isFailure $ runParser parseExpr "--1"
     assertBool "" $ isFailure $ runParser parseExpr "-!1"
 
-mult  = symbol '*' >>= toOperator
-sum'  = symbol '+' >>= toOperator
-minus = symbol '-' >>= toOperator
-div'  = symbol '/' >>= toOperator
+mult  = Mult  <$ symbol '*'
+sum'  = Plus  <$ symbol '+'
+minus = Minus <$ symbol '-'
+div'  = Div   <$ symbol '/'
 
 expr1 :: Parser String String AST
 expr1 =

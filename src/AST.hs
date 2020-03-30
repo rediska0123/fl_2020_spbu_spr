@@ -29,7 +29,7 @@ instance Show Operator where
   show Mult   = "*"
   show Minus  = "-"
   show Div    = "/"
-  show Equal  = "="
+  show Equal  = "=="
   show Pow    = "^"
   show Nequal = "/="
   show Gt     = ">"
@@ -38,6 +38,7 @@ instance Show Operator where
   show Le     = "<="
   show And    = "&&"
   show Or     = "||"
+  show Not    = "!"
 
 instance Show AST where
   show  = printf "\n%s" . go 0
