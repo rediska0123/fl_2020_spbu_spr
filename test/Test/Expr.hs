@@ -4,8 +4,8 @@ import           AST                 (AST (..), Operator (..))
 import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           Control.Applicative ((<|>))
-import           Expr                (Associativity (..), evaluate, parseExpr, parseStr,
-                                      parseNum, uberExpr, parseIdent, OpType (..))
+import           Expr                (Associativity (..), evaluate, parseExpr,
+                                      parseNum, parseOp, toOperator, uberExpr, parseIdent, OpType (..))
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
 
 isFailure (Failure _) = True

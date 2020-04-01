@@ -33,7 +33,6 @@ stmt =
          )
     ]
 
-
 parseAssign :: Parser String String LAst
 parseAssign = do
     parseStr "Assign "
