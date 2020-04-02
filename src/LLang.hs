@@ -11,7 +11,7 @@ type Var = String
 
 data LAst
   = If { cond :: Expr, thn :: LAst, els :: LAst }
-  | While { cond :: AST, body :: LAst }
+  | While { cond :: Expr, body :: LAst }
   | Assign { var :: Var, expr :: Expr }
   | Read { var :: Var }
   | Write { expr :: Expr }
@@ -90,5 +90,35 @@ parseStatement :: Parser String String LAst
 parseStatement = parseAssign <|> parseRead <|> parseWrite <|> parseSeq <|> parseIf <|> parseWhile
 
 
+getExprVars :: Expr -> [Var]
+getExprVars (BinOp op e1 e2) = getExprVars e1 ++ getExprVars e2
+getExprVars (UnaryOp op e) = getExprVars e
+getExprVars (Num _) = []
+getExprVars (Ident x) = [x]
+
+
+getVars :: LAst -> [Var]
+getVars (If {cond = cond, thn = thn, els = els}) = condVars ++ bodyVars where
+    bodyVars = getVars thn ++ getVars els
+    condVars = getExprVars cond
+getVars (While {cond = cond, body = body}) = condVars ++ bodyVars where
+    bodyVars = getVars body
+    condVars = getExprVars cond
+getVars (Assign {var = x, expr = expr}) = x : (getExprVars expr)
+getVars (Read {var = x}) = [x]
+getVars (Write {expr = expr}) = getExprVars expr
+getVars (Seq {statements = stmts}) = concat $ getVars <$> stmts
+
+
+unique :: (Eq a) => [a] -> [a]
+unique = foldr (\x list -> if elem x list then list else x:list) []
+
+
+addVarDefinitions :: LAst -> LAst
+addVarDefinitions a@(Seq {statements = stmts}) =
+    Seq {statements = asgmts ++ stmts} where
+        asgmts = (\x -> Assign{var = x, expr = Num 0}) <$> unique (getVars a)
+
+
 parseL :: Parser String String LAst
-parseL = parseSeq
+parseL = addVarDefinitions <$> parseSeq

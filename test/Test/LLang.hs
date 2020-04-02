@@ -4,7 +4,7 @@ import           AST                 (AST (..), Operator (..))
 import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           LLang               (LAst (..), parseAssign, parseRead, parseWrite,
-                                      parseSeq, parseIf, parseWhile, parseStatement, parseL)
+                                      parseSeq, parseIf, parseWhile, parseStatement, parseL, getVars)
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
 
 isFailure (Failure _) = True
@@ -83,10 +83,23 @@ unit_parseWhile = do
     assertBool "" $ isFailure $ runParser parseWhile "While (0) { Read x }"
 
 
+unit_getVars :: Assertion
+unit_getVars = do
+    let Success "" last = runParser parseSeq "{ }" in
+        getVars last @?= []
+    let Success "" last = runParser parseSeq "{ Assign x (10+10); Read y; Write (d); }" in
+        getVars last @?= ["x", "y", "d"]
+    let Success "" last = runParser parseSeq "{ If (y+x>10) { Assign a (8); } { Assign b (4); }; }" in
+        getVars last @?= ["y", "x", "a", "b"]
+    let Success "" last = runParser parseSeq "{ While (y+x>10) { Assign a (8); }; }" in
+        getVars last @?= ["y", "x", "a"]
+
+
 unit_parseL :: Assertion
 unit_parseL = do
     runParser parseL "{ }" @?= Success "" (Seq {statements = []})
     runParser parseL "{ Assign x (10+10); While (x>10) { Assign x (x-1); Write (x); }; }" @?= Success "" (Seq {statements = [
+       Assign {var = "x", expr = Num 0},
        Assign {var = "x", expr = BinOp Plus (Num 10) (Num 10)},
        While {
          cond = BinOp Gt (Ident "x") (Num 10),
@@ -96,7 +109,9 @@ unit_parseL = do
          ]}
        }
     ]})
+
     runParser parseL "{ Assign x (10+10); While (x>10) { If (x>15) { Read x; } { }; }; }" @?= Success "" (Seq {statements = [
+       Assign {var = "x", expr = Num 0},
        Assign {var = "x", expr = BinOp Plus (Num 10) (Num 10)},
        While {
          cond = BinOp Gt (Ident "x") (Num 10),
@@ -111,6 +126,32 @@ unit_parseL = do
          ]}
        }
     ]})
+
+    let program = "{ Assign x (10-(x)*7); If (a*3==5) { Read y; } { Write (z); }; While (b*10+c) { Read c; Read d; }; }"
+        Success "" (Seq {statements = stmts}) = runParser parseSeq program
+      in
+        runParser parseL program @?= Success "" (Seq {statements = [
+            Assign {var = "x", expr = Num 0},
+            Assign {var = "a", expr = Num 0},
+            Assign {var = "y", expr = Num 0},
+            Assign {var = "z", expr = Num 0},
+            Assign {var = "b", expr = Num 0},
+            Assign {var = "c", expr = Num 0},
+            Assign {var = "d", expr = Num 0}
+        ] ++ stmts})
+
+    let program = "{ If (y+y>y) { Assign y (8); } { Assign y (4); }; }"
+        Success "" (Seq {statements = stmts}) = runParser parseSeq program
+      in
+        runParser parseL program @?= Success "" (Seq {statements = [
+            Assign {var = "y", expr = Num 0}
+        ] ++ stmts})
+
+    runParser parseL "{ Write (x); }" @?= Success "" (Seq {statements = [
+        Assign {var = "x", expr = Num 0},
+        Write {expr = Ident "x"}
+    ]})
+
     assertBool "" $ isFailure $ runParser parseL "{ Write (x) }"
     assertBool "" $ isFailure $ runParser parseL "If (1) { } { }"
     assertBool "" $ isFailure $ runParser parseL "While (1) { }"
