@@ -4,8 +4,10 @@ import           AST                 (AST (..), Operator (..))
 import           Combinators         (Parser (..), Result (..), runParser,
                                       symbol)
 import           LLang               (LAst (..), parseAssign, parseRead, parseWrite,
-                                      parseSeq, parseIf, parseWhile, parseStatement, parseL, getVars)
+                                      parseSeq, parseIf, parseWhile, parseStatement,
+                                      parseL, getVars, eval, Configuration (..))
 import           Test.Tasty.HUnit    (Assertion, (@?=), assertBool)
+import           Data.Map            (Map (..), empty, fromList)
 
 isFailure (Failure _) = True
 isFailure  _          = False
@@ -157,3 +159,22 @@ unit_parseL = do
     assertBool "" $ isFailure $ runParser parseL "While (1) { }"
     assertBool "" $ isFailure $ runParser parseL "Read x"
     assertBool "" $ isFailure $ runParser parseL "{}"
+
+
+unit_eval :: Assertion
+unit_eval = do
+    eval "{ Read x; While (x>0) { Write (2*x); Assign x (x-1); }; }"
+      (Conf {subst = empty,               input = [10], output = []}) @?=
+      (Conf {subst = fromList [("x", 0)], input = [],   output = [20, 18..2]})
+
+    eval "{ Read x; If (x>0) { Write (2*x); Assign x (x-1); } { Assign y (3*x+5); }; }"
+      (Conf {subst = empty,                         input = [10], output = []}) @?=
+      (Conf {subst = fromList [("x", 9), ("y", 0)], input = [],   output = [20]})
+
+    eval "{ Read x; If (x>0) { Write (2*x); Assign x (x-1); } { Assign y (3*x+5); }; }"
+      (Conf {subst = empty,                         input = [0], output = []}) @?=
+      (Conf {subst = fromList [("x", 0), ("y", 5)], input = [],  output = []})
+
+    eval "{ Assign f0 (0); Assign f1 (1); Read n; While (n>1) { Assign t (f0); Assign f0 (f1); Assign f1 (t+f1); Assign n (n-1); }; Write (f1); }"
+      (Conf {subst = empty,                                                   input = [12], output = []}) @?=
+      (Conf {subst = fromList [("n", 1), ("f0", 89), ("f1", 144), ("t", 55)], input = [],   output = [144]})
