@@ -15,6 +15,9 @@ data Associativity
 data OpType = Binary Associativity
             | Unary
 
+evalExpr :: Subst -> AST -> Maybe Int
+evalExpr = error "evalExpr undefined"
+
 uberExpr :: Monoid e
          => [(Parser e i op, OpType)] -- список операций с их арностью и, в случае бинарных, ассоциативностью
          -> Parser e i ast            -- парсер элементарного выражения
