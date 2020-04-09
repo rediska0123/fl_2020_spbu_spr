@@ -6,7 +6,8 @@ import Combinators (Parser (..), Result (..))
 import Data.Map (Map (..), insert, (!), member, empty)
 import Expr (parseExpr, parseStr, parseIdent)
 import Control.Applicative ((<|>), many)
-import           Text.Printf (printf)
+import Text.Printf (printf)
+import Data.List (intercalate)
 
 type Expr = AST
 
