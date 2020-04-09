@@ -2,7 +2,7 @@ module LLang where
 
 import AST (AST (..), Operator (..))
 import Combinators (Parser (..), Result (..))
-import Data.Map (Map (..), insert, (!))
+import Data.Map (Map (..), insert, (!), member, empty)
 import Expr (parseExpr, parseStr, parseIdent)
 import Control.Applicative ((<|>), many)
 
@@ -21,21 +21,6 @@ data LAst
   | Write { expr :: Expr }
   | Seq { statements :: [LAst] }
   deriving (Show, Eq)
-
-stmt :: LAst
-stmt =
-  Seq
-    [ Read "X"
-    , If (BinOp Gt (Ident "X") (Num 13))
-         (Write (Ident "X"))
-         (While (BinOp Lt (Ident "X") (Num 42))
-                (Seq [ Assign "X"
-                        (BinOp Mult (Ident "X") (Num 7))
-                     , Write (Ident "X")
-                     ]
-                )
-         )
-    ]
 
 parseAssign :: Parser String String LAst
 parseAssign = do
@@ -127,46 +112,50 @@ addVarDefinitions a@(Seq {statements = stmts}) =
 parseL :: Parser String String LAst
 parseL = addVarDefinitions <$> parseSeq
 
-eval :: String -> Configuration -> Configuration
-eval program conf = let Success "" last = runParser parseL program in
-  evalLAst last conf where
-    evalLAst :: LAst -> Configuration -> Configuration
-    evalLAst (Seq {statements = stmts}) conf' = foldl (flip evalLAst) conf' stmts
-    evalLAst (Assign {var = var, expr = expr})
-      (Conf {subst = subst, input = inp, output = outp}) =
-        Conf {subst = insert var (evalExpr expr subst) subst, input = inp, output = outp}
-    evalLAst (Read {var = var})
-      (Conf {subst = subst, input = (i:inp), output = outp}) =
-        Conf {subst = insert var i subst, input = inp, output = outp}
-    evalLAst (Write {expr = expr})
-      (Conf {subst = subst, input = inp, output = outp}) =
-        Conf {subst = subst, input = inp, output = outp ++ [(evalExpr expr subst)]}
-    evalLAst while@(While {cond = cond, body = body})
-      conf'@(Conf {subst = subst, input = inp, output = outp}) =
-        let c = evalExpr cond subst in
-          if c /= 0 then evalLAst while (evalLAst body conf') else conf'
-    evalLAst if'@(If {cond = cond, thn = thn, els = els})
-      conf'@(Conf {subst = subst, input = inp, output = outp}) =
-        let c    = evalExpr cond subst
-            body = if c /= 0 then thn else els in
-          evalLAst body conf'
-    evalLAst _ _ = error "failed to evaluate"
 
-    evalExpr :: Expr -> Map Var Int -> Int
-    evalExpr (Num x)            c = x
-    evalExpr (Ident x)          c = c ! x
-    evalExpr (UnaryOp Minus x)  c = - evalExpr x c
-    evalExpr (UnaryOp Not x)    c = fromEnum $ evalExpr x c == 0
-    evalExpr (BinOp Plus x y)   c = evalExpr x c + evalExpr y c
-    evalExpr (BinOp Mult x y)   c = evalExpr x c * evalExpr y c
-    evalExpr (BinOp Minus x y)  c = evalExpr x c - evalExpr y c
-    evalExpr (BinOp Div x y)    c = evalExpr x c `div` evalExpr y c
-    evalExpr (BinOp Pow x y)    c = evalExpr x c ^ evalExpr y c
-    evalExpr (BinOp Equal x y)  c = fromEnum $ evalExpr x c == evalExpr y c
-    evalExpr (BinOp Nequal x y) c = fromEnum $ evalExpr x c /= evalExpr y c
-    evalExpr (BinOp Ge x y)     c = fromEnum $ evalExpr x c >= evalExpr y c
-    evalExpr (BinOp Gt x y)     c = fromEnum $ evalExpr x c >  evalExpr y c
-    evalExpr (BinOp Le x y)     c = fromEnum $ evalExpr x c <  evalExpr y c
-    evalExpr (BinOp Lt x y)     c = fromEnum $ evalExpr x c <= evalExpr y c
-    evalExpr (BinOp Or x y)     c = fromEnum $ (evalExpr x c /= 0) || (evalExpr y c /= 0)
-    evalExpr (BinOp And x y)    c = fromEnum $ (evalExpr x c /= 0) && (evalExpr y c /= 0)
+initialConf :: [Int] -> Configuration
+initialConf input = Conf empty input []
+
+
+eval :: LAst -> Configuration -> Maybe Configuration
+eval (Seq {statements = stmts}) conf' = foldl (\c p -> c >>= (eval p)) (Just conf') stmts
+eval (Assign {var = var, expr = expr}) (Conf {subst = subst, input = inp, output = outp}) =
+  case evalExpr expr subst of
+    Nothing -> Nothing
+    Just x  -> Just $ Conf {subst = insert var x subst, input = inp, output = outp}
+eval (Read {var = var}) (Conf {subst = subst, input = (i:inp), output = outp}) =
+    Just $ Conf {subst = insert var i subst, input = inp, output = outp}
+eval (Write {expr = expr}) (Conf {subst = subst, input = inp, output = outp}) =
+  case evalExpr expr subst of
+    Nothing -> Nothing
+    Just x  -> Just $ Conf {subst = subst, input = inp, output = x:outp}
+eval while@(While {cond = cond, body = body}) conf'@(Conf {subst = subst, input = inp, output = outp}) =
+    case evalExpr cond subst of
+      Nothing -> Nothing
+      Just c  -> case eval body conf' of
+        Nothing -> Nothing
+        Just b  -> if c /= 0 then eval while b else Just conf'
+eval if'@(If {cond = cond, thn = thn, els = els}) conf'@(Conf {subst = subst, input = inp, output = outp}) =
+    case evalExpr cond subst of
+      Nothing -> Nothing
+      Just c -> let body = if c /= 0 then thn else els in eval body conf'
+eval _ _ = Nothing
+
+evalExpr :: Expr -> Map Var Int -> Maybe Int
+evalExpr (Num x)            c = Just x
+evalExpr (Ident x)          c = if member x c then Just(c ! x) else Nothing
+evalExpr (UnaryOp Minus x)  c =  (*(-1)) <$> evalExpr x c
+evalExpr (UnaryOp Not x)    c = fromEnum <$> (==0) <$> evalExpr x c
+evalExpr (BinOp Plus x y)   c = (+) <$> evalExpr x c <*> evalExpr y c
+evalExpr (BinOp Mult x y)   c = (*) <$> evalExpr x c <*> evalExpr y c
+evalExpr (BinOp Minus x y)  c = (-) <$> evalExpr x c <*> evalExpr y c
+evalExpr (BinOp Div x y)    c = div <$> evalExpr x c <*> evalExpr y c
+evalExpr (BinOp Pow x y)    c = (^) <$> evalExpr x c <*> evalExpr y c
+evalExpr (BinOp Equal x y)  c = fromEnum <$> ((==) <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Nequal x y) c = fromEnum <$> ((/=) <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Ge x y)     c = fromEnum <$> ((>=) <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Gt x y)     c = fromEnum <$> ((>)  <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Le x y)     c = fromEnum <$> ((<=) <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Lt x y)     c = fromEnum <$> ((<)  <$> evalExpr x c <*> evalExpr y c)
+evalExpr (BinOp Or x y)     c = fromEnum <$> ((||) <$> ((/=0) <$> evalExpr x c) <*> ((/=0) <$> evalExpr y c))
+evalExpr (BinOp And x y)    c = fromEnum <$> ((&&) <$> ((/=0) <$> evalExpr x c) <*> ((/=0) <$> evalExpr y c))
