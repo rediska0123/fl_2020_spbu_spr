@@ -6,7 +6,7 @@ import           Combinators         (InputStream (..), Parser (..),
                                       symbol, toStream, word)
 import           Control.Applicative ((<|>))
 import           Expr                (Associativity (..), OpType (..), evaluate,
-                                      parseExpr, parseNegNum, parseNum,                                       uberExpr, parseIdent)
+                                      parseExpr, parseNum, uberExpr, parseIdent)
 import           Test.Tasty.HUnit    (Assertion, assertBool, (@?=))
 
 testFailure = assertBool "" . isFailure
@@ -40,15 +40,6 @@ unit_parseNum = do
     runParser parseNum "007" @?= Success (toStream "" 3) (7)
     testFailure (runParser parseNum "+3")
     testFailure (runParser parseNum "a")
-
-unit_parseNegNum :: Assertion
-unit_parseNegNum = do
-    runParser parseNegNum "123" @?= Success (toStream "" 3) (123)
-    runParser parseNegNum "-123" @?= Success (toStream "" 4) (-123)
-    runParser parseNegNum "--123" @?= Success (toStream "" 5) (123)
-    testFailure $ runParser parseNegNum "+-3"
-    testFailure $ runParser parseNegNum "-+3"
-    testFailure $ runParser parseNegNum "-a"
 
 unit_parseIdent :: Assertion
 unit_parseIdent = do
@@ -110,6 +101,10 @@ unit_parseExpr = do
     runParser parseExpr "-(!1)" @?= Success (toStream "" 5) (UnaryOp Minus (UnaryOp Not (Num 1)))
     runParser parseExpr "-1---2" @?= Success (toStream "---2" 2) (UnaryOp Minus (Num 1))
     runParser parseExpr "-1^-2" @?= Success (toStream "^-2" 2) (UnaryOp Minus (Num 1))
+    runParser parseExpr "f(1, 2)" @?= Success (toStream "" 7) (FunctionCall "f" [Num 1, Num 2])
+    runParser parseExpr "f(1, 2, 3, 4)" @?= Success (toStream "" 13) (FunctionCall "f" [Num 1, Num 2, Num 3, Num 4])
+    runParser parseExpr "f(1+2)" @?= Success (toStream "" 6) (FunctionCall "f" [BinOp Plus (Num 1) (Num 2)])
+    runParser parseExpr "kekos_memos()" @?= Success (toStream "" 13) (FunctionCall "kekos_memos" [])
 
     testFailure $ runParser parseExpr "--1"
     testFailure $ runParser parseExpr "-!1"
