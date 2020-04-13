@@ -209,7 +209,7 @@ checkDuplicatesAndCalls Program {functions = fs, main = m} = let
     fcalls = (concat (getFCalls <$> (\Function {name = n, args = a, funBody = b} -> b) <$> fs)) ++ getFCalls m
     check :: (String, Int) -> Maybe String
     check (f, a) = if elem (f, a) fdefs then Nothing else
-      Just $ "Wrong function name or number of arguments in" ++ f ++ "(" ++ show a ++ " arguments); "
+      Just $ "Wrong function name or number of arguments in " ++ f ++ "(" ++ show a ++ " arguments); "
   in
     if length fnames /= length (Set.fromList fnames) then Just "Duplicate function definitions" else
     foldl (\f d -> case check d of
