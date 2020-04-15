@@ -160,8 +160,8 @@ fold (Return {expr = expr}) vf af i =
 getVars :: LAst -> [Var]
 getVars last = fold last (:) (flip const) []
 
--- Возвращает все вызову функций --- (имя функции,
--- количесво аргументов, с которыми он вызвана)
+-- Возвращает все вызовы функций --- (имя функции;
+-- количество аргументов, с которыми он вызвана)
 getFCalls :: LAst -> [(String, Int)]
 getFCalls last = fold last (flip const) (\ast list ->
   case ast of
@@ -227,7 +227,7 @@ parseProg = do
   where
     parseProgHelper :: Parser String String Program
     parseProgHelper = do
-        funcs <- many (parseDef <* parseStr "; ")
+        funcs <- many (parseDef <* parseStr " ")
         main <- parseL
         return Program {functions = funcs, main = main}
 

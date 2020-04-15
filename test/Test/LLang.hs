@@ -390,7 +390,7 @@ unit_parseProg = do
       functions = [],
       main = Seq {statements = [Assign "x" (Num 0), Write (Ident "x")]}
     })
-    checkParses parseProg "Def f(x) { Write (x); Write (y); }; { Read x; Write (f(x+2)); }" (Program {
+    checkParses parseProg "Def f(x) { Write (x); Write (y); } { Read x; Write (f(x+2)); }" (Program {
       functions = [Function {name = "f", args = ["x"],
           funBody = Seq {statements = [
           Assign "y" (Num 0),
@@ -405,7 +405,7 @@ unit_parseProg = do
         Write {expr = FunctionCall "f" [(BinOp Plus (Ident "x") (Num 2))]}
       ]}
     })
-    checkParses parseProg "Def f(x, y) { }; Def g() { Return (f(2, 2)); }; { Write (g()); }" (Program {
+    checkParses parseProg "Def f(x, y) { } Def g() { Return (f(2, 2)); } { Write (g()); }" (Program {
       functions = [Function {name = "f", args = ["x", "y"],
           funBody = Seq {statements = [ Return (Num 0) ]}
       }, Function {name = "g", args = [],
@@ -418,4 +418,4 @@ unit_parseProg = do
     assertBool "" $ isFailure $ runParser parseProg "{ Write (f(2)); }"
     assertBool "" $ isFailure $ runParser parseProg "Def f(x, y) { }; { Write (f(2)); }"
     assertBool "" $ isFailure $ runParser parseProg "Def f(x) { }; { Write (f(2, 3)); }"
-    assertBool "" $ isFailure $ runParser parseProg "{ Return 2; }"
+    assertBool "" $ isFailure $ runParser parseProg "{ Return (2); }"
