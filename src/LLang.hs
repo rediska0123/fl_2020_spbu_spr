@@ -165,8 +165,7 @@ parseDef = do
     parseStr "("
     args <- manyWithSep (parseStr ", ") parseIdent
     parseStr ") "
-    body <- parseSeq
-    parseStr " "
+    body <- (parseSeq <* parseStr " ") <|> pure (Seq [])
     ret <- parseReturn
     parseStr ";"
     let Seq {statements = st} = addVarDefinitionsExcept args Seq {
