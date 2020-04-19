@@ -35,16 +35,26 @@ incrPos :: InputStream a -> InputStream a
 incrPos (InputStream str pos) = InputStream str (pos + 1)
 
 instance Functor (Parser error input) where
-  fmap = error "fmap not implemented"
+  fmap f (Parser runp) = Parser $ \inp ->
+    case runp inp of
+      Failure err      -> Failure err
+      Success inp1 res -> Success inp1 $ f res
 
 instance Applicative (Parser error input) where
-  pure = error "pure not implemented"
-  (<*>) = error "<*> not implemented"
+  pure x = Parser $ \inp -> Success inp x
+  (Parser r1) <*> (Parser r2) = Parser $ \inp ->
+    case r1 inp of
+      Failure err    -> Failure err
+      Success inp1 f ->
+        case r2 inp1 of
+          Failure err    -> Failure err
+          Success inp2 x -> Success inp2 $ f x
 
 instance Monad (Parser error input) where
-  return = error "return not implemented"
-
-  (>>=) = error ">>= not implemented"
+  (Parser r1) >>= f = Parser $ \inp ->
+    case r1 inp of
+      Failure err    -> Failure err
+      Success inp1 x -> runParser' (f x) inp1
 
 instance Monoid error => Alternative (Parser error input) where
   empty = Parser $ \input -> Failure [makeError mempty (curPos input)]
@@ -90,6 +100,9 @@ satisfy p = Parser $ \(InputStream input pos) ->
     (x:xs) | p x -> Success (incrPos $ InputStream xs pos) x
     input        -> Failure [makeError "Predicate failed" pos]
 
+parseStr :: String -> Parser String String String
+parseStr = foldr (\x acc -> (:) <$> symbol x <*> acc) (pure "")
+
 -- Успешно парсит пустую строку
 epsilon :: Parser e i ()
 epsilon = success ()
@@ -97,6 +110,9 @@ epsilon = success ()
 -- Всегда завершается успехом, вход не читает, возвращает данное значение
 success :: a -> Parser e i a
 success a = Parser $ \input -> Success input a
+
+manyWithSep :: (Monoid e) => Parser e i b -> Parser e i a -> Parser e i [a]
+manyWithSep sep p = ((:) <$> p <*> many (sep *> p)) <|> pure []
 
 -- Всегда завершается ошибкой
 fail' :: e -> Parser e i a
