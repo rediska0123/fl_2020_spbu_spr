@@ -214,6 +214,12 @@ unit_parseDef = do
       funBody = Seq {statements = []},
       returnExpr = Num 0
     })
+    checkParses parseDef "Def func(a, bc, d) Returns (a+bc*r);" (Function {
+      name = "func",
+      args = ["a", "bc", "d"],
+      funBody = Seq {statements = [Assign "r" (Num 0)]},
+      returnExpr = BinOp Plus (Ident "a") (BinOp Mult (Ident "bc") (Ident "r"))
+    })
     checkParses parseDef "Def F(a, bc, d) { If (a>0) { Assign e (bc+4); } { Assign e (3); }; } Returns (d*e);" (Function {
       name = "F",
       args = ["a", "bc", "d"],
