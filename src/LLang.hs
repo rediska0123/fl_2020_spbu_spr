@@ -3,7 +3,7 @@ module LLang where
 import           AST         (AST (..), Operator (..), Subst (..))
 import           Combinators (Parser (..), parseStr, manyWithSep,
                               ErrorMsg (..), Result (..), fail')
-import           Expr        (foldExpr, parseIdent, parseExpr)
+import           Expr        (foldExpr, parseIdent, parseExpr, parseSep)
 import           Data.List   (intercalate, (\\))
 import qualified Data.Map    as Map
 import qualified Data.Set    as Set
@@ -38,55 +38,64 @@ initialConf :: [Int] -> Configuration
 initialConf input = Conf Map.empty input [] Map.empty
 
 
+
 parseAssign :: Parser String String LAst
 parseAssign = do
-    parseStr "Assign "
+    parseSep
+    parseStr "Assign"
     x <- parseIdent
-    parseStr " ("
+    parseStr "("
     expr <- parseExpr
-    parseStr ")"
+    parseStr ")" <* parseSep
     return Assign {var = x, expr = expr}
 
 
 parseRead :: Parser String String LAst
 parseRead = do
-    parseStr "Read "
+    parseSep
+    parseStr "Read"
     x <- parseIdent
     return Read {var = x}
 
 
 parseWrite :: Parser String String LAst
 parseWrite = do
-    parseStr "Write ("
+    parseSep
+    parseStr "Write" <* parseSep
+    parseStr "("
     expr <- parseExpr
-    parseStr ")"
+    parseStr ")" <* parseSep
     return Write {expr = expr}
 
 
 parseSeq :: Parser String String LAst
 parseSeq = do
-    parseStr "{ "
-    statements <- many $ parseStatement <* parseStr "; "
-    parseStr "}"
+    parseSep
+    parseStr "{" <* parseSep
+    statements <- many $ parseStatement <* (parseSep *> parseStr ";" <* parseSep)
+    parseStr "}" <* parseSep
     return Seq {statements = statements}
 
 
 parseIf :: Parser String String LAst
 parseIf = do
-    parseStr "If ("
+    parseSep
+    parseStr "If" <* parseSep
+    parseStr "("
     expr <- parseExpr
-    parseStr ") "
+    parseStr ")"
     l1 <- parseSeq
-    parseStr " "
     l2 <- parseSeq
     return If {cond = expr, thn = l1, els = l2}
 
 
 parseWhile :: Parser String String LAst
 parseWhile = do
-    parseStr "While ("
+    parseSep
+    parseStr "While" <* parseSep
+    parseStr "("
     expr <- parseExpr
-    parseStr ") "
+    parseStr ")"
     l <- parseSeq
     return While {cond = expr, body = l}
 
@@ -103,9 +112,11 @@ parseStatement =
 
 parseReturn :: Parser String String Expr
 parseReturn = do
-    parseStr "Returns ("
+    parseSep
+    parseStr "Returns" <* parseSep
+    parseStr "("
     expr <- parseExpr
-    parseStr ")"
+    parseStr ")" <* parseSep
     return expr
 
 
@@ -160,14 +171,15 @@ parseL = addVarDefinitionsExcept [] <$> parseSeq
 
 parseDef :: Parser String String Function
 parseDef = do
-    parseStr "Def "
+    parseSep
+    parseStr "Def"
     name <- parseIdent
     parseStr "("
-    args <- manyWithSep (parseStr ", ") parseIdent
-    parseStr ") "
-    body <- (parseSeq <* parseStr " ") <|> pure (Seq [])
+    args <- (manyWithSep (parseSep *> parseStr "," <* parseSep) parseIdent) <* parseSep
+    parseStr ")"
+    body <- (parseSeq <|> pure (Seq []))
     ret <- parseReturn
-    parseStr ";"
+    parseStr ";" <* parseSep
     let Seq {statements = st} = addVarDefinitionsExcept args Seq {
         statements = [body, Write {expr = ret}]
       }
@@ -209,7 +221,7 @@ parseProg = do
   where
     parseProgHelper :: Parser String String Program
     parseProgHelper = do
-        funcs <- many (parseDef <* parseStr " ")
+        funcs <- many parseDef
         main <- parseL
         return Program {functions = funcs, main = main}
 

@@ -26,7 +26,9 @@ checkParses parser prog last = do
 unit_parseAssign :: Assertion
 unit_parseAssign = do
     checkParses parseAssign "Assign x (13)" (Assign {var = "x", expr = (Num 13)})
-    checkParses parseAssign "Assign _ (13*42)" (Assign {var = "_", expr = (BinOp Mult (Num 13) (Num 42))})
+    checkParses parseAssign "Assignx(13)" (Assign {var = "x", expr = (Num 13)})
+    checkParses parseAssign "\nAssignx  (  13\n)" (Assign {var = "x", expr = (Num 13)})
+    checkParses parseAssign "Assign _ (13 * 42)" (Assign {var = "_", expr = (BinOp Mult (Num 13) (Num 42))})
     assertBool "" $ isFailure $ runParser parseAssign "Assign x 13"
     assertBool "" $ isFailure $ runParser parseAssign "kekos abrikos"
 
@@ -34,6 +36,8 @@ unit_parseAssign = do
 unit_parseRead :: Assertion
 unit_parseRead = do
     checkParses parseRead "Read _x" (Read {var = "_x"})
+    checkParses parseRead "Readkek" (Read {var = "kek"})
+    checkParses parseRead "   ReadRead" (Read {var = "Read"})
     assertBool "" $ isFailure $ runParser parseRead "Assign x (13)"
     assertBool "" $ isFailure $ runParser parseRead "Read (x)"
 
@@ -41,19 +45,19 @@ unit_parseRead = do
 unit_parseWrite :: Assertion
 unit_parseWrite = do
     checkParses parseWrite "Write (_x)" (Write {expr = (Ident "_x")})
+    checkParses parseWrite " Write(  k )" (Write {expr = (Ident "k")})
     checkParses parseWrite "Write (3-z)" (Write {expr = (BinOp Minus (Num 3) (Ident "z"))})
     assertBool "" $ isFailure $ runParser parseWrite "Write 3"
 
 
 unit_parseSeq :: Assertion
 unit_parseSeq = do
+    checkParses parseSeq "{}" (Seq {statements = []})
     checkParses parseSeq "{ }" (Seq {statements = []})
     checkParses parseSeq "{ Read x; }" (Seq {statements = [Read {var = "x"}]})
+    checkParses parseSeq "  {Readx ;} " (Seq {statements = [Read {var = "x"}]})
     checkParses parseSeq "{ Read x; Write (x); }" (Seq {statements = [Read {var = "x"}, Write {expr = (Ident "x")}]})
-    assertBool "" $ isFailure $ runParser parseSeq "{}"
     assertBool "" $ isFailure $ runParser parseSeq "{ Read x }"
-    assertBool "" $ isFailure $ runParser parseSeq "{ Read x;}"
-    assertBool "" $ isFailure $ runParser parseSeq "{Read x; }"
     assertBool "" $ isFailure $ runParser parseSeq "{ Read x; Write (x) }"
 
 
@@ -64,15 +68,17 @@ unit_parseIf = do
        thn = Seq{statements = []},
        els = Seq{statements = []}
     })
+    checkParses parseIf " If(2 < 3){\n}{}" (If {
+       cond = (BinOp Lt (Num 2) (Num 3)),
+       thn = Seq{statements = []},
+       els = Seq{statements = []}
+    })
     checkParses parseIf "If (1) { Read x; } { Write (x); }" (If {
        cond = (Num 1),
        thn = Seq{statements = [Read {var = "x"}]},
        els = Seq{statements = [Write {expr = (Ident "x")}]}
     })
     assertBool "" $ isFailure $ runParser parseIf "If () { } { }"
-    assertBool "" $ isFailure $ runParser parseIf "If (1) { }{ }"
-    assertBool "" $ isFailure $ runParser parseIf "If (1) {} { }"
-    assertBool "" $ isFailure $ runParser parseIf "If (1) { } {}"
     assertBool "" $ isFailure $ runParser parseIf "If 1 { } { }"
     assertBool "" $ isFailure $ runParser parseIf "if (1) { } { }"
     assertBool "" $ isFailure $ runParser parseIf "If (1) { Read x; }"
@@ -85,12 +91,15 @@ unit_parseWhile = do
        cond = (BinOp Lt (Num 2) (Num 3)),
        body = Seq{statements = []}
     })
+    checkParses parseWhile "  While(2\n<  3){} " (While {
+       cond = (BinOp Lt (Num 2) (Num 3)),
+       body = Seq{statements = []}
+    })
     checkParses parseWhile "While (1) { Read x; }" (While {
        cond = (Num 1),
        body = Seq{statements = [Read {var = "x"}]}
     })
     assertBool "" $ isFailure $ runParser parseWhile "While () { }"
-    assertBool "" $ isFailure $ runParser parseWhile "While (1) {}"
     assertBool "" $ isFailure $ runParser parseWhile "while (1) { }"
     assertBool "" $ isFailure $ runParser parseWhile "While (0) { Read x }"
 
@@ -145,7 +154,7 @@ unit_parseL = do
        }
     ]})
 
-    let program = "{ Assign x (10-(x)*7); If (a*3==5) { Read y; } { Write (z); }; While (b*10+c) { Read c; Read d; }; }"
+    let program = "{Assignx(10-x*7);If(a*3==5){Ready;}{Write(z);};While(b*10+c){Readc;Readd;};}"
         Success _ (Seq {statements = stmts}) = runParser parseSeq program
       in
         checkParses parseL program (Seq {statements = [
@@ -158,7 +167,7 @@ unit_parseL = do
             Assign {var = "x", expr = Num 0}
         ] ++ stmts})
 
-    let program = "{ If (y+y>y) { Assign y (8); } { Assign y (4); }; }"
+    let program = " {If(y +y >y){ Assign y(8); }{ Assign y (4); }; } "
         Success _ (Seq {statements = stmts}) = runParser parseSeq program
       in
         checkParses parseL program (Seq {statements = [
@@ -174,7 +183,6 @@ unit_parseL = do
     assertBool "" $ isFailure $ runParser parseL "If (1) { } { }"
     assertBool "" $ isFailure $ runParser parseL "While (1) { }"
     assertBool "" $ isFailure $ runParser parseL "Read x"
-    assertBool "" $ isFailure $ runParser parseL "{}"
 
 
 unit_eval :: Assertion
@@ -231,7 +239,7 @@ unit_parseDef = do
       ]},
       returnExpr = BinOp Mult (Ident "d") (Ident "e")
     })
-    checkParses parseDef "Def _(x) { Assign y (z+x); } Returns (x+y);" (Function {
+    checkParses parseDef "  Def_(x){Assigny(z + x) ;}Returns(x + y) ; " (Function {
       name = "_",
       args = ["x"],
       funBody = Seq {statements = [
@@ -264,7 +272,7 @@ unit_parseProg = do
         Write {expr = FunctionCall "f" [(BinOp Plus (Ident "x") (Num 2))]}
       ]}
     })
-    checkParses parseProg "Def f(x, y) { } Returns (0); Def g() { } Returns (f(2, 2)); { Write (g()); }" (Program {
+    checkParses parseProg " Deff (x ,y){}Returns( 0 ) ;Defg ( ){}\nReturns(f (2 ,2 ) );{Write( g() ) ;} " (Program {
       functions = [Function {name = "f", args = ["x", "y"],
           funBody = Seq {statements = []},
           returnExpr = Num 0

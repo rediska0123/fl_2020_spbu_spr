@@ -28,6 +28,7 @@ unit_evaluate = do
     evaluate "1-2-3" @?= Just (1-2-3)
     evaluate "4/2-2" @?= Just (4 `div` 2 - 2)
     evaluate "(1+2)*(3+4)" @?= Just ((1+2)*(3+4))
+    evaluate "  ( 1 +  2) \n*\t\n(3\t+\n4 )  " @?= Just ((1+2)*(3+4))
     evaluate "12+(23*(34)+456)" @?= Just (12+(23*(34)+456))
     evaluate "((1-(2*3))+4)" @?= Just ((1-(2*3))+4)
     evaluate "1-2+3-4" @?= Just (1-2+3-4)
@@ -38,16 +39,18 @@ unit_parseNum = do
     runParser parseNum "7" @?= Success (toStream "" 1) (7)
     runParser parseNum "12+3" @?= Success (toStream "+3" 2) (12)
     runParser parseNum "007" @?= Success (toStream "" 3) (7)
+    runParser parseNum " 007 " @?= Success (toStream "" 5) (7)
     testFailure (runParser parseNum "+3")
     testFailure (runParser parseNum "a")
 
 unit_parseIdent :: Assertion
 unit_parseIdent = do
-    runParser parseIdent "abc def" @?= Success (toStream " def" 3) "abc"
-    runParser parseIdent "AbC dEf" @?= Success (toStream " dEf" 3) "AbC"
+    runParser parseIdent "abc def" @?= Success (toStream "def" 4) "abc"
+    runParser parseIdent "AbC dEf" @?= Success (toStream "dEf" 4) "AbC"
     runParser parseIdent "_123" @?= Success (toStream "" 4) "_123"
-    runParser parseIdent "a_b_c d_e" @?= Success (toStream " d_e" 5) "a_b_c"
-    runParser parseIdent "x_ " @?= Success (toStream " " 2) "x_"
+    runParser parseIdent "a_b_c d_e" @?= Success (toStream "d_e" 6) "a_b_c"
+    runParser parseIdent " a_b_c d_e" @?= Success (toStream "d_e" 7) "a_b_c"
+    runParser parseIdent "x_" @?= Success (toStream "" 2) "x_"
     runParser parseIdent "abc123" @?= Success (toStream "" 6) "abc123"
     runParser parseIdent "_" @?= Success (toStream "" 1) "_"
     runParser parseIdent "abc*1" @?= Success (toStream "*1" 3) "abc"
@@ -101,6 +104,10 @@ unit_parseExpr = do
     runParser parseExpr "-(!1)" @?= Success (toStream "" 5) (UnaryOp Minus (UnaryOp Not (Num 1)))
     runParser parseExpr "-1---2" @?= Success (toStream "---2" 2) (UnaryOp Minus (Num 1))
     runParser parseExpr "-1^-2" @?= Success (toStream "^-2" 2) (UnaryOp Minus (Num 1))
+
+    runParser parseExpr "f(2, 3)" @?= Success (toStream "" 7) (FunctionCall "f" [Num 2, Num 3])
+    runParser parseExpr " f ( 2,3 ) " @?= Success (toStream "" 11) (FunctionCall "f" [Num 2, Num 3])
+    runParser parseExpr " f ( \n ) " @?= Success (toStream "" 9) (FunctionCall "f" [])
 
     testFailure $ runParser parseExpr "--1"
     testFailure $ runParser parseExpr "-!1"
