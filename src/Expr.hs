@@ -3,7 +3,7 @@ module Expr where
 import           AST                 (AST (..), Operator (..), Subst (..))
 import           Combinators         (Parser (..), Result (..), fail',
                                       runParser, satisfy, stream, success,
-                                      symbol, parseStr, manyWithSep)
+                                      symbol, parseStr, manyWithSep, (<?>))
 import           Control.Applicative
 import           Data.Char           (digitToInt, isDigit, isLetter)
 import qualified Data.Map            as Map
@@ -83,7 +83,7 @@ parseSep = many (symbol ' ' <|> symbol '\n' <|> symbol '\t')
 -- с естественными приоритетами и ассоциативностью над натуральными числами с 0.
 -- В строке могут быть скобки
 parseExpr :: Parser String String AST
-parseExpr = uberExpr [(or', Binary RightAssoc),
+parseExpr = "Expected expression" <?> uberExpr [(or', Binary RightAssoc),
                       (and', Binary RightAssoc),
                       (not', Unary),
                       (equal <|> nequal <|> ge <|> gt <|> le <|> lt, Binary NoAssoc),
@@ -99,7 +99,7 @@ parseExpr = uberExpr [(or', Binary RightAssoc),
 
 -- Парсер для целых чисел
 parseNum :: Parser String String Int
-parseNum = parseSep *> (foldl (\acc d -> 10 * acc + digitToInt d) 0 <$> go) <* parseSep
+parseNum = "Expected number" <?> parseSep *> (foldl (\acc d -> 10 * acc + digitToInt d) 0 <$> go) <* parseSep
   where
     go :: Parser String String String
     go = some (satisfy isDigit)
@@ -107,7 +107,7 @@ parseNum = parseSep *> (foldl (\acc d -> 10 * acc + digitToInt d) 0 <$> go) <* p
 parseIdent :: Parser String String String
 parseIdent = let id = (:) <$> (satisfy isLetter <|> symbol '_') <*>
                       many (satisfy isLetter <|> symbol '_' <|> satisfy isDigit) in
-             parseSep *> id <* parseSep
+             "Expected identifier" <?> parseSep *> id <* parseSep
 
 evaluate :: String -> Maybe Int
 evaluate input = do

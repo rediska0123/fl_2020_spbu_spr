@@ -8,9 +8,15 @@ import           Data.List           (nub, sortBy)
 data Result error input result
   = Success (InputStream input) result
   | Failure [ErrorMsg error]
-  deriving (Eq)
 
-type Position = Int
+
+data Position = Position { line :: Int, col :: Int }
+              deriving (Show, Eq)
+
+instance Ord Position where
+  (Position a b) < (Position a' b') = if a == a' then b < b' else a < a'
+  a <= a' = a < a' || a == a'
+
 
 newtype Parser error input result
   = Parser { runParser' :: (InputStream input) -> Result error input result }
@@ -19,11 +25,10 @@ data InputStream a = InputStream { stream :: a, curPos :: Position }
                    deriving (Show, Eq)
 
 data ErrorMsg e = ErrorMsg { errors :: [e], pos :: Position }
-                deriving (Eq)
 
 makeError e p = ErrorMsg [e] p
 
-initPosition = 0
+initPosition = Position 0 0
 
 runParser :: Parser error input result -> input -> Result error input result
 runParser parser input = runParser' parser (InputStream input initPosition)
@@ -31,8 +36,10 @@ runParser parser input = runParser' parser (InputStream input initPosition)
 toStream :: a -> Position -> InputStream a
 toStream = InputStream
 
-incrPos :: InputStream a -> InputStream a
-incrPos (InputStream str pos) = InputStream str (pos + 1)
+incrPos :: Position -> Char -> Position
+incrPos (Position line col) '\t' = Position line (col + 4)
+incrPos (Position line col) '\n' = Position (line + 1) 0
+incrPos (Position line col) _ = Position line (col + 1)
 
 instance Functor (Parser error input) where
   fmap f (Parser runp) = Parser $ \inp ->
@@ -94,14 +101,11 @@ eof :: Parser String String ()
 eof = Parser $ \input -> if null $ stream input then Success input () else Failure [makeError "Not eof" (curPos input)]
 
 -- Проверяет, что первый элемент входной последовательности удовлетворяет предикату
-satisfy :: (a -> Bool) -> Parser String [a] a
+satisfy :: (Char -> Bool) -> Parser String String Char
 satisfy p = Parser $ \(InputStream input pos) ->
   case input of
-    (x:xs) | p x -> Success (incrPos $ InputStream xs pos) x
+    (x:xs) | p x -> Success (InputStream xs (incrPos pos x)) x
     input        -> Failure [makeError "Predicate failed" pos]
-
-parseStr :: String -> Parser String String String
-parseStr = foldr (\x acc -> (:) <$> symbol x <*> acc) (pure "")
 
 -- Успешно парсит пустую строку
 epsilon :: Parser e i ()
@@ -122,8 +126,11 @@ word :: String -> Parser String String String
 word w = Parser $ \(InputStream input pos) ->
   let (pref, suff) = splitAt (length w) input in
   if pref == w
-  then Success (InputStream suff (pos + length w)) w
+  then Success (InputStream suff (foldl incrPos pos w)) w
   else Failure [makeError ("Expected " ++ show w) pos]
+
+parseStr :: String -> Parser String String String
+parseStr = word
 
 instance Show (ErrorMsg String) where
   show (ErrorMsg e pos) = "at position " ++ show pos ++ ":\n" ++ (unlines $ map ('\t':) (nub e))
@@ -131,3 +138,9 @@ instance Show (ErrorMsg String) where
 instance (Show input, Show result) => Show (Result String input result) where
   show (Failure e) = "Parsing failed\n" ++ unlines (map show e)
   show (Success i r) = "Parsing succeeded!\nResult:\n" ++ show r ++ "\nSuffix:\t" ++ show i
+
+instance Eq (ErrorMsg String) where
+  e1 == e2 = (show e1) == (show e2)
+
+instance (Show input, Show result) => Eq (Result String input result) where
+  e1 == e2 = (show e1) == (show e2)

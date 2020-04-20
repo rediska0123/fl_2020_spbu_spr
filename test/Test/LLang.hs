@@ -1,7 +1,9 @@
 module Test.LLang where
 
 import           AST
-import           Combinators      (Parser (..), Result (..), runParser, toStream, symbol)
+import           Combinators      (Parser (..), Result (..), runParser,
+                                   toStream, symbol, InputStream (..),
+                                   Position (..), ErrorMsg (..))
 import qualified Data.Map         as Map
 import           Data.Map            (empty, fromList)
 import           Debug.Trace      (trace)
@@ -20,7 +22,9 @@ isFailure  _          = False
 
 checkParses :: (Eq r, Show r) => Parser String String r -> String -> r -> Assertion
 checkParses parser prog last = do
-    runParser parser prog @?= Success (toStream "" (length prog)) last
+    case runParser parser prog of
+       Success (InputStream "" _) _ -> 1    @?= 1
+       otherwise                    -> prog @?= "IS NOT PARSING!"
 
 
 unit_parseAssign :: Assertion
@@ -288,3 +292,62 @@ unit_parseProg = do
     assertBool "" $ isFailure $ runParser parseProg "Def f(x, y) { }; { Write (f(2)); }"
     assertBool "" $ isFailure $ runParser parseProg "Def f(x) { } Returns 0; { Write (f(2, 3)); }"
     assertBool "" $ isFailure $ runParser parseProg "{ Returns (2); }"
+
+
+checkPos pos prog lasts = case runParser parseProg prog of
+      Success (InputStream lasts' pos') _ -> (pos', lasts') @?= (pos, lasts)
+      otherwise                          -> prog @?= "IS NOT PASRING!" 
+
+
+unit_progPosition :: Assertion
+unit_progPosition = do
+    checkPos (Position 4 0) "{\n\tRead n;\n\tWrite(n);\n}\n" ""
+    checkPos (Position 2 4) "{\n\tRead n;}\n\t👌" "👌"
+    checkPos (Position 3 0) "{}\n\n\n" ""
+    checkPos (Position 2 9) "{}\n\n\t \t" ""
+
+
+unit_errors :: Assertion
+unit_errors = do
+    case runParser parseStatement "" of
+      Success _ _  -> "not parsing" @?= "parsing"
+      Failure msgs -> msgs @?= [ErrorMsg [
+         "Expected \"Assign\"",
+         "Expected \"Read\"",
+         "Expected \"Write\"",
+         "Expected \"{\"",
+         "Expected \"If\"",
+         "Expected \"While\""
+        ] (Position 0 0)]
+    case runParser parseStatement "{\n\tR\n}\n" of
+      Success _ _  -> "not parsing" @?= "parsing"
+      Failure msgs -> msgs @?= [ErrorMsg [
+         "Expected \"Assign\"",
+         "Expected \"Read\"",
+         "Expected \"Write\"",
+         "Expected \"If\"",
+         "Expected \"While\""
+        ] (Position 0 0), ErrorMsg[
+         "Expected \"}\""
+        ] (Position 1 4)]
+    case runParser parseStatement "\n \n  \tRead" of
+      Success _ _  -> "not parsing" @?= "parsing"
+      Failure msgs -> msgs @?= [ErrorMsg [
+         "Expected \"Assign\"",
+         "Expected \"Write\"",
+         "Expected \"{\"",
+         "Expected \"If\"",
+         "Expected \"While\""
+        ] (Position 2 6), ErrorMsg[
+         "Expected identifier",
+         "Predicate failed",
+         "Expected symbol: \'_\'"
+        ] (Position 2 10)]
+    case runParser parseStatement "\tWrite (~);" of
+     Success _ _  -> "not parsing" @?= "parsing"
+     Failure msgs -> case msgs !! 1 of
+       ErrorMsg l (Position 0 11) ->
+         if not (any (== "Expected expression") l) then (show msgs) @?= "no 'Expected expression' err"
+         else if not (any (== "Expected number") l) then (show msgs) @?= "no 'Expected number' err"
+         else 1 @?= 1
+       _ -> (show msgs) @?= "has Position 0 11"
