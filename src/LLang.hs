@@ -3,13 +3,13 @@ module LLang where
 import           AST         (AST (..), Operator (..), Subst (..))
 import           Combinators (Parser (..), parseStr, manyWithSep,
                               ErrorMsg (..), Result (..), fail')
-import           Expr        (evalExpr, foldExpr, parseIdent,
-                              parseExpr)
+import           Expr        (foldExpr, parseIdent, parseExpr)
 import           Data.List   (intercalate, (\\))
 import qualified Data.Map    as Map
-import qualified Data.Set as Set
+import qualified Data.Set    as Set
 import           Text.Printf (printf)
 import           Control.Applicative
+import           Control.Monad
 
 type Expr = AST
 
@@ -215,27 +215,84 @@ parseProg = do
 
 eval :: LAst -> Configuration -> Maybe Configuration
 eval (Seq stmts) conf' = foldl (\c p -> c >>= (eval p)) (Just conf') stmts
-eval (Assign var expr) (Conf subst inp outp defs) =
-  case evalExpr subst expr of
-    Nothing -> Nothing
-    Just x  -> Just $ Conf (Map.insert var x subst) inp outp defs
+eval (Assign var expr) conf'@(Conf subst inp outp defs) =
+  case evalExpr conf' expr of
+    Nothing                -> Nothing
+    Just (Conf _ i o _, x) -> Just $ Conf (Map.insert var x subst) i o defs
 eval (Read var) (Conf subst (i:inp) outp defs) =
     Just $ Conf (Map.insert var i subst) inp outp defs
-eval (Write expr) (Conf subst inp outp defs) =
-  case evalExpr subst expr of
-    Nothing -> Nothing
-    Just x  -> Just $ Conf subst inp (x:outp) defs
-eval while@(While cond body) conf'@(Conf subst inp outp defs) =
-    case evalExpr subst cond of
+eval (Write expr) conf'@(Conf subst inp outp defs) =
+  case evalExpr conf' expr of
+    Nothing                -> Nothing
+    Just (Conf _ i o _, x) -> Just $ Conf subst i (x:o) defs
+eval while@(While cond body) conf'@(Conf s _ _ d) =
+    case evalExpr conf' cond of
+      Nothing                -> Nothing
+      Just (Conf _ i o _, c) -> case c of
+        0         -> Just (Conf s i o d)
+        otherwise -> case eval body (Conf s i o d) of
+          Nothing -> Nothing
+          Just b  -> eval while b
+eval if'@(If cond thn els) conf'@(Conf s _ _ d) =
+    case evalExpr conf' cond of
       Nothing -> Nothing
-      Just c  -> case eval body conf' of
-        Nothing -> Nothing
-        Just b  -> if c /= 0 then eval while b else Just conf'
-eval if'@(If cond thn els) conf'@(Conf subst inp outp defs) =
-    case evalExpr subst cond of
-      Nothing -> Nothing
-      Just c -> let body = if c /= 0 then thn else els in eval body conf'
+      Just (Conf _ i o _, c) -> let body = if c /= 0 then thn else els in eval body (Conf s i o d)
 eval _ _ = Nothing
+
+
+evalFunction :: Configuration -> Function -> [Int] -> Maybe (Configuration, Int)
+evalFunction (Conf s i o d) (Function _ args (Seq stmts) ret) argvals =
+  case eval (Seq $ stmts ++ [Write ret]) (Conf (Map.fromList $ zip args argvals) i o d) of
+    Just (Conf _ i' (res:o') _) -> Just (Conf s i' o' d, res)
+    otherwise                   -> Nothing
+evalFunction conf (Function nm args cmd ret) argvals =
+  evalFunction conf (Function nm args (Seq [cmd]) ret) argvals
+
+
+evalExpr :: Configuration -> AST -> Maybe (Configuration, Int)
+evalExpr c@(Conf s i o d) (Num x)               = Just (c, x)
+evalExpr c@(Conf s i o d) (Ident x)             = (,) c <$> Map.lookup x s
+evalExpr c@(Conf s i o d) (UnaryOp Minus x)     = (fmap (*(-1))) <$> evalExpr c x
+evalExpr c@(Conf s i o d) (UnaryOp Not x)       = (fmap (fromEnum.(==0))) <$> evalExpr c x
+evalExpr c@(Conf s i o d) (BinOp Plus x y)      =
+  evalExpr c x >>= (\(c', res) -> (fmap $ (+) res) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Mult x y)      =
+  evalExpr c x >>= (\(c', res) -> (fmap $ (*) res) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Minus x y)     =
+  evalExpr c x >>= (\(c', res) -> (fmap $ (-) res) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Div x y)       =
+  evalExpr c x >>= (\(c', res) -> (fmap $ div res) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Pow x y)       =
+  evalExpr c x >>= (\(c', res) -> (fmap $ (^) res) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Equal x y)     =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res == res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Nequal x y)    =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res /= res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Ge x y)        =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res >= res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Gt x y)        =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res >  res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Le x y)        =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res <= res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Lt x y)        =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum (res <  res')) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp Or x y)        =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum ((res /= 0) || (res' /= 0))) <$> evalExpr c' y)
+evalExpr c@(Conf s i o d) (BinOp And x y)       =
+  evalExpr c x >>= (\(c', res) -> (fmap $ \res' -> fromEnum ((res /= 0) && (res' /= 0))) <$> evalExpr c' y)
+evalExpr c@(Conf _ _ _ defs) (FunctionCall f args) =
+  let helper x expr = case x of
+                        Nothing         -> Nothing
+                        Just (c', list) -> case evalExpr c' expr of
+                          Nothing         -> Nothing
+                          Just (c'', res) -> Just (c'', list ++ [res])
+      res = foldl helper (Just (c, [])) args
+      func = Map.lookup f defs
+   in case res of
+     Nothing            -> Nothing
+     Just (c'@(Conf s _ _ d), argvars) -> case func >>= (\f -> evalFunction c' f argvars) of
+         Nothing                         -> Nothing
+         Just (c'@(Conf _ i o _), res) -> Just (Conf s i o d, res)
 
 
 instance Show Function where

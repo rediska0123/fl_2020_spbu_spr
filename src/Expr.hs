@@ -7,6 +7,7 @@ import           Combinators         (Parser (..), Result (..), fail',
 import           Control.Applicative
 import           Data.Char           (digitToInt, isDigit, isLetter)
 import qualified Data.Map            as Map
+import           Data.Traversable
 
 data Associativity
   = LeftAssoc  -- 1 @ 2 @ 3 @ 4 = (((1 @ 2) @ 3) @ 4)
@@ -32,27 +33,6 @@ lt     = Lt     <$ parseStr "<"
 not'   = Not    <$ parseStr "!"
 and'   = And    <$ parseStr "&&"
 or'    = Or     <$ parseStr "||"
-
-
-evalExpr :: Subst -> AST -> Maybe Int
-evalExpr c (Num x)               = Just x
-evalExpr c (Ident x)             = Map.lookup x c
---evalExpr (Subst ) (FunctionCall f args) = 
-evalExpr c (UnaryOp Minus x)     =  (*(-1)) <$> evalExpr c x
-evalExpr c (UnaryOp Not x)       = fromEnum <$> (==0) <$> evalExpr c x
-evalExpr c (BinOp Plus x y)      = (+) <$> evalExpr c x <*> evalExpr c y
-evalExpr c (BinOp Mult x y)      = (*) <$> evalExpr c x <*> evalExpr c y
-evalExpr c (BinOp Minus x y)     = (-) <$> evalExpr c x <*> evalExpr c y
-evalExpr c (BinOp Div x y)       = div <$> evalExpr c x <*> evalExpr c y
-evalExpr c (BinOp Pow x y)       = (^) <$> evalExpr c x <*> evalExpr c y
-evalExpr c (BinOp Equal x y)     = fromEnum <$> ((==) <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Nequal x y)    = fromEnum <$> ((/=) <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Ge x y)        = fromEnum <$> ((>=) <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Gt x y)        = fromEnum <$> ((>)  <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Le x y)        = fromEnum <$> ((<=) <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Lt x y)        = fromEnum <$> ((<)  <$> evalExpr c x <*> evalExpr c y)
-evalExpr c (BinOp Or x y)        = fromEnum <$> ((||) <$> ((/=0) <$> evalExpr c x) <*> ((/=0) <$> evalExpr c y))
-evalExpr c (BinOp And x y)       = fromEnum <$> ((&&) <$> ((/=0) <$> evalExpr c x) <*> ((/=0) <$> evalExpr c y))
 
 
 foldExpr :: AST -> (String -> a -> a) -> (AST -> a -> a) -> a -> a
