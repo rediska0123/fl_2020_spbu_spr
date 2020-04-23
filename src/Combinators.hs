@@ -37,7 +37,7 @@ toStream :: a -> Position -> InputStream a
 toStream = InputStream
 
 incrPos :: Position -> Char -> Position
-incrPos (Position line col) '\t' = Position line (col + 4)
+incrPos (Position line col) '\t' = Position line $ (col `div` 4 + 1) * 4
 incrPos (Position line col) '\n' = Position (line + 1) 0
 incrPos (Position line col) _ = Position line (col + 1)
 

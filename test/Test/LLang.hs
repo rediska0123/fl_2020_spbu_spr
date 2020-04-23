@@ -304,7 +304,7 @@ unit_progPosition = do
     checkPos (Position 4 0) "{\n\tRead n;\n\tWrite(n);\n}\n" ""
     checkPos (Position 2 4) "{\n\tRead n;}\n\t👌" "👌"
     checkPos (Position 3 0) "{}\n\n\n" ""
-    checkPos (Position 2 9) "{}\n\n\t \t" ""
+    checkPos (Position 2 8) "{}\n\n\t \t" ""
 
 
 unit_errors :: Assertion
@@ -338,11 +338,11 @@ unit_errors = do
          "Expected \"{\"",
          "Expected \"If\"",
          "Expected \"While\""
-        ] (Position 2 6), ErrorMsg[
+        ] (Position 2 4), ErrorMsg[
          "Expected identifier",
          "Predicate failed",
          "Expected symbol: \'_\'"
-        ] (Position 2 10)]
+        ] (Position 2 8)]
     case runParser parseStatement "\tWrite (~);" of
      Success _ _  -> "not parsing" @?= "parsing"
      Failure msgs -> case msgs !! 1 of
