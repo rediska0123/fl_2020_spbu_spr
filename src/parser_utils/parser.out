@@ -1,0 +1,196 @@
+Created by PLY version 3.11 (http://www.dabeaz.com/ply)
+
+Grammar
+
+Rule 0     S' -> statement
+Rule 1     statement -> NONTERM RARROW seq NEWLINE statement
+Rule 2     statement -> NONTERM RARROW seq NEWLINE
+Rule 3     seq -> seq OR rhs
+Rule 4     seq -> rhs
+Rule 5     rhs -> rhs COMMA TERM
+Rule 6     rhs -> rhs COMMA NONTERM
+Rule 7     rhs -> TERM
+Rule 8     rhs -> NONTERM
+Rule 9     rhs -> EPS
+
+Terminals, with rules where they appear
+
+COMMA                : 5 6
+EPS                  : 9
+NEWLINE              : 1 2
+NONTERM              : 1 2 6 8
+OR                   : 3
+RARROW               : 1 2
+TERM                 : 5 7
+error                : 
+
+Nonterminals, with rules where they appear
+
+rhs                  : 3 4 5 6
+seq                  : 1 2 3
+statement            : 1 0
+
+Parsing method: LALR
+
+state 0
+
+    (0) S' -> . statement
+    (1) statement -> . NONTERM RARROW seq NEWLINE statement
+    (2) statement -> . NONTERM RARROW seq NEWLINE
+
+    NONTERM         shift and go to state 2
+
+    statement                      shift and go to state 1
+
+state 1
+
+    (0) S' -> statement .
+
+
+
+state 2
+
+    (1) statement -> NONTERM . RARROW seq NEWLINE statement
+    (2) statement -> NONTERM . RARROW seq NEWLINE
+
+    RARROW          shift and go to state 3
+
+
+state 3
+
+    (1) statement -> NONTERM RARROW . seq NEWLINE statement
+    (2) statement -> NONTERM RARROW . seq NEWLINE
+    (3) seq -> . seq OR rhs
+    (4) seq -> . rhs
+    (5) rhs -> . rhs COMMA TERM
+    (6) rhs -> . rhs COMMA NONTERM
+    (7) rhs -> . TERM
+    (8) rhs -> . NONTERM
+    (9) rhs -> . EPS
+
+    TERM            shift and go to state 7
+    NONTERM         shift and go to state 4
+    EPS             shift and go to state 8
+
+    seq                            shift and go to state 5
+    rhs                            shift and go to state 6
+
+state 4
+
+    (8) rhs -> NONTERM .
+
+    COMMA           reduce using rule 8 (rhs -> NONTERM .)
+    NEWLINE         reduce using rule 8 (rhs -> NONTERM .)
+    OR              reduce using rule 8 (rhs -> NONTERM .)
+
+
+state 5
+
+    (1) statement -> NONTERM RARROW seq . NEWLINE statement
+    (2) statement -> NONTERM RARROW seq . NEWLINE
+    (3) seq -> seq . OR rhs
+
+    NEWLINE         shift and go to state 9
+    OR              shift and go to state 10
+
+
+state 6
+
+    (4) seq -> rhs .
+    (5) rhs -> rhs . COMMA TERM
+    (6) rhs -> rhs . COMMA NONTERM
+
+    NEWLINE         reduce using rule 4 (seq -> rhs .)
+    OR              reduce using rule 4 (seq -> rhs .)
+    COMMA           shift and go to state 11
+
+
+state 7
+
+    (7) rhs -> TERM .
+
+    COMMA           reduce using rule 7 (rhs -> TERM .)
+    NEWLINE         reduce using rule 7 (rhs -> TERM .)
+    OR              reduce using rule 7 (rhs -> TERM .)
+
+
+state 8
+
+    (9) rhs -> EPS .
+
+    COMMA           reduce using rule 9 (rhs -> EPS .)
+    NEWLINE         reduce using rule 9 (rhs -> EPS .)
+    OR              reduce using rule 9 (rhs -> EPS .)
+
+
+state 9
+
+    (1) statement -> NONTERM RARROW seq NEWLINE . statement
+    (2) statement -> NONTERM RARROW seq NEWLINE .
+    (1) statement -> . NONTERM RARROW seq NEWLINE statement
+    (2) statement -> . NONTERM RARROW seq NEWLINE
+
+    $end            reduce using rule 2 (statement -> NONTERM RARROW seq NEWLINE .)
+    NONTERM         shift and go to state 2
+
+    statement                      shift and go to state 12
+
+state 10
+
+    (3) seq -> seq OR . rhs
+    (5) rhs -> . rhs COMMA TERM
+    (6) rhs -> . rhs COMMA NONTERM
+    (7) rhs -> . TERM
+    (8) rhs -> . NONTERM
+    (9) rhs -> . EPS
+
+    TERM            shift and go to state 7
+    NONTERM         shift and go to state 4
+    EPS             shift and go to state 8
+
+    rhs                            shift and go to state 13
+
+state 11
+
+    (5) rhs -> rhs COMMA . TERM
+    (6) rhs -> rhs COMMA . NONTERM
+
+    TERM            shift and go to state 14
+    NONTERM         shift and go to state 15
+
+
+state 12
+
+    (1) statement -> NONTERM RARROW seq NEWLINE statement .
+
+    $end            reduce using rule 1 (statement -> NONTERM RARROW seq NEWLINE statement .)
+
+
+state 13
+
+    (3) seq -> seq OR rhs .
+    (5) rhs -> rhs . COMMA TERM
+    (6) rhs -> rhs . COMMA NONTERM
+
+    NEWLINE         reduce using rule 3 (seq -> seq OR rhs .)
+    OR              reduce using rule 3 (seq -> seq OR rhs .)
+    COMMA           shift and go to state 11
+
+
+state 14
+
+    (5) rhs -> rhs COMMA TERM .
+
+    COMMA           reduce using rule 5 (rhs -> rhs COMMA TERM .)
+    NEWLINE         reduce using rule 5 (rhs -> rhs COMMA TERM .)
+    OR              reduce using rule 5 (rhs -> rhs COMMA TERM .)
+
+
+state 15
+
+    (6) rhs -> rhs COMMA NONTERM .
+
+    COMMA           reduce using rule 6 (rhs -> rhs COMMA NONTERM .)
+    NEWLINE         reduce using rule 6 (rhs -> rhs COMMA NONTERM .)
+    OR              reduce using rule 6 (rhs -> rhs COMMA NONTERM .)
+
