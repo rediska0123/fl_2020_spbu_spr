@@ -1,7 +1,7 @@
 from src.grammar_parser import grammar_from_string
 
 
-def test_compress():
+def test_grammar_parser():
     tests = [
         (
             """A -> B
@@ -37,9 +37,8 @@ def test_compress():
         ),
     ]
     for grammar_text, is_correct, nonterms, terms, rules in tests:
-        try:
-            gr = grammar_from_string(grammar_text)
-        except Exception:
+        gr, err = grammar_from_string(grammar_text)
+        if err != '':
             assert not is_correct, 'Grammar {} failed to parse, expected success'.format(grammar_text)
             continue
         assert is_correct, 'Grammar {} successfully parsed, expected error'.format(grammar_text)

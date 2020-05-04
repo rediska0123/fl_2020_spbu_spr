@@ -4,7 +4,7 @@
 
 Для инициализации необходимо выполнить следующую команду в корне репозитория:
 ```buildoutcfg
-pip3 install requirements.txt
+pip install requirements.txt
 ```
 
 ## Использование
@@ -12,7 +12,7 @@ pip3 install requirements.txt
 Для запуска парсера контекстно-свободной грамматики из файла `filepath` необходимо выполнить:
 
 ```buildoutcfg
-python3 src/grammar_parser.py --inp `filepath`
+python src/grammar_parser.py --inp `filepath`
 ```
 
 Если грамматика распарсилась, выведется сообщение `Parsed successfully!` и результат, иначе выведется ошибка.

@@ -23,9 +23,7 @@ class Grammar:
 
 def grammar_from_string(s: str):
     g, t, nt, err = parse(s)
-    if err:
-        raise Exception('Error parsing grammar: \n{}'.format(s))
-    return Grammar(g, t, nt)
+    return (None if err != '' else Grammar(g, t, nt)), err
 
 
 if __name__ == '__main__':
@@ -35,6 +33,9 @@ if __name__ == '__main__':
     input_file = args.inp
     with open(input_file, 'r') as f:
         text = ''.join(f.readlines())
-    gr = grammar_from_string(text)
-    print('Parsed successfully!')
-    print(gr)
+    gr, err = grammar_from_string(text)
+    if err == '':
+        print('Parsed successfully!')
+        print(gr)
+    else:
+        print('Failed to parse: {}'.format(err))

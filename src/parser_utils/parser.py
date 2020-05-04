@@ -3,7 +3,7 @@ from collections import defaultdict
 import string
 
 
-err = False
+err = ''
 rules = defaultdict(list)
 terms = []
 nonterms = []
@@ -22,8 +22,7 @@ t_ignore = ' \t'
 
 def t_error(t):
     global err
-    print('Illegal character {}'.format(t.value[0]))
-    err = True
+    err = 'Illegal character {}'.format(t.value[0])
     t.lexer.skip(1)
 
 
@@ -74,17 +73,16 @@ def p_rhs_single_eps(p):
 
 def p_error(p):
     global err
-    print('Syntax error at {}'.format(p))
-    err = True
+    err = 'Syntax error at {}'.format(p)
 
 
 def process_symb(symb):
     if symb in string.ascii_lowercase:
         if symb not in terms:
-            terms.append(s)
+            terms.append(symb)
     else:
         if symb not in nonterms:
-            nonterms.append(s)
+            nonterms.append(symb)
 
 
 yacc.yacc()
@@ -95,7 +93,7 @@ def parse(text):
     rules = defaultdict(list)
     terms = []
     nonterms = []
-    err = False
+    err = ''
     yacc.parse(text)
     return rules, terms, nonterms, err
 
@@ -107,3 +105,4 @@ if __name__ == '__main__':
         except EOFError:
             break
         print(parse(s))
+
