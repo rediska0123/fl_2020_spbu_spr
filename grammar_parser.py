@@ -10,7 +10,7 @@ def grammar_from_string(s):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Parse context free grammars')
-    parser.add_argument('--inp', metavar='inp', type=str, help='input file path', default='../examples/grammar_example')
+    parser.add_argument('--inp', metavar='inp', type=str, help='input file path', default='examples/grammar_example')
     args = parser.parse_args()
     input_file = args.inp
     with open(input_file, 'r') as f:
