@@ -4,7 +4,7 @@
 
 Для инициализации необходимо выполнить следующую команду в корне репозитория:
 ```buildoutcfg
-pip3 install requirements.txt
+pip3 install -r requirements.txt
 ```
 
 ## Использование
