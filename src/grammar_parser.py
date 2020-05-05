@@ -1,27 +1,9 @@
 import argparse
 from src.parser_utils.parser import parse
-from collections import defaultdict
-from typing import List
+from src.grammar.grammar_definition import Grammar
 
 
-class Grammar:
-    def __init__(self, gram: defaultdict, terms: List[str], nonterms: List[str]):
-        self.rules = gram
-        self.terms = terms
-        self.nonterms = nonterms
-        self.start = 'S'
-
-    def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        res = ''
-        for key, val in self.rules.items():
-            res += key + ' -> ' + ' | '.join([' '.join(rhs) for rhs in val]) + '\n'
-        return res
-
-
-def grammar_from_string(s: str):
+def grammar_from_string(s):
     g, t, nt, err = parse(s)
     return (None if err != '' else Grammar(g, t, nt)), err
 
