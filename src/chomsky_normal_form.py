@@ -1,6 +1,6 @@
-from src.grammar.grammar_definition import Grammar
+from grammar_definition import Grammar
 from collections import defaultdict
-from src.grammar_parser import grammar_from_string
+from grammar_parser import grammar_from_string
 from copy import deepcopy
 
 

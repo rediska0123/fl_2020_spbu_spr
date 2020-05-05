@@ -1,6 +1,3 @@
-from collections import defaultdict
-
-
 class Grammar:
     def __init__(self, gram, terms, nonterms):
         self.rules = gram

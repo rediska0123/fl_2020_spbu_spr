@@ -1,6 +1,6 @@
-from src.grammar.cocke_younger_kasami_algorithm import cyk
-from src.grammar_parser import grammar_from_string
-from src.grammar.chomsky_normal_form import get_chomsky_normal_form
+from cocke_younger_kasami_algorithm import cyk
+from grammar_parser import grammar_from_string
+from chomsky_normal_form import get_chomsky_normal_form
 
 
 def test_cyk():

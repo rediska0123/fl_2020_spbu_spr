@@ -1,4 +1,4 @@
-from src.grammar_parser import grammar_from_string
+from grammar_parser import grammar_from_string
 
 
 def test_grammar_parser():
