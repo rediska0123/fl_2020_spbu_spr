@@ -1,0 +1,179 @@
+\documentclass[12pt,a4paper]{scrartcl}
+\usepackage[utf8x]{inputenc}
+\usepackage[english,russian]{babel}
+\usepackage{indentfirst}
+\usepackage{misccorr}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{marvosym}
+\usepackage{color,soul}
+\usepackage{upgreek}
+\usepackage{gensymb}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm,bindingoffset=0cm]{geometry}
+\usepackage{cmap}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{pifont}
+\usepackage{tikz}
+\usepackage{verbatim}
+
+\newcommand{\N}{\mathbb{N}}   % Natural numbers
+\newcommand{\R}{\mathbb{R}}   % Ratio numbers
+\newcommand{\Z}{\mathbb{Z}}   % Integer numbers
+\def\O{\mathcal{O}}           %
+\def\t{\texttt}               % mono font
+\renewcommand{\le}{\leqslant} % <=, beauty
+\renewcommand{\ge}{\geqslant} % >=, beauty
+\def\XOR{\text{ {\raisebox{-2pt}{\ensuremath{\Hat{}}}} }}
+\newcommand{\hilight}[1]{\colorbox{yellow}{#1}}
+
+\usetikzlibrary{shapes,arrows}
+\usetikzlibrary{positioning,automata}
+\tikzset{every state/.style={minimum size=0.2cm},
+	initial text={}
+}
+
+
+\newenvironment{myauto}[1][3]
+{
+	\begin{center}
+		\begin{tikzpicture}[> = stealth,node distance=#1cm, on grid, very thick]
+	}
+	{
+		\end{tikzpicture}
+	\end{center}
+}
+
+% Отступы
+\def\makeparindent{\hspace*{\parindent}}
+\def\up{\vspace*{-0.3em}}
+\def\down{\vspace*{0.3em}}
+\def\LINE{\vspace*{-1em}\noindent \underline{\hbox to 1\textwidth{{ } \hfil{ } \hfil{ } }}}
+%\def\up{\vspace*{-\baselineskip}}
+
+\begin{document}
+	\section*{Формальные языки}
+	\subsection*{Домашнее задание 11}
+	\begin{flushright}
+		Фадеева Екатерина
+	\end{flushright}
+
+\begin{description}
+	\item[\fbox{2.}]
+	$\text{S} \rightarrow \text{aSbbbb | aaaSbb | c}$
+	
+	Грамматика $\text{S} \rightarrow \text{aSbbbb | T}, \text{T} \rightarrow \text{aaaTbb | c}$ эквивалентна исходной, т.к. в этой грамматике мы сначала делаем все правила вида $\text{S} \rightarrow \text{aSbbbb}$ из первой грамматики, а потом все правила вида $\text{S} \rightarrow \text{aaaSbb}$ из первой грамматики (а нам не важно в первой грамматике, в каком порядке выполнять все правила, кроме последнего правила $\text{S} \rightarrow \text{c}$).
+	
+	Любое слово, принадлежащее этой грамматике, имеет вид $a^ncb^m$, т.к. любое правило либо дописывает справа буквы $b$ и слева буквы $a$, либо дописывает $c$ и завершает разбор.
+	
+	Любой вывод слова в этой грамматике имеет вид: выполняем $x$ правил $\text{S} \rightarrow \text{aSbbbb}$, затем правило $\text{S} \rightarrow \text{T}$, затем $y$ правил $\text{T} \rightarrow \text{aaaTbb}$, затем правило $\text{T} \rightarrow \text{c}$.
+	
+	Теперь докажем, что приведенная грамматика однозначная: если у нас есть слово $a^ncb^m$ и его вывод с числами $x$ и $y$, то известно, что выведется слово $a^{x+3y}cb^{4x+2y}$, а значит:
+	
+	$\begin{cases}
+	 x + 3y = n\\
+	4x + 2y = m
+	\end{cases}$
+	
+	Из этого можно однозначно вывести $x$ и $y$:
+	
+	$\begin{cases}
+	x = \frac{3m - 2n}{10}\\
+	y = \frac{4n - m}{10}
+	\end{cases}$
+	
+	Т.о. вывод слова $a^ncb^m$ --- обязательно сначала выполняем $\frac{3m - 2n}{10}$ правил $\text{S} \rightarrow \text{aSbbbb}$, затем правило $\text{S} \rightarrow \text{T}$, затем $\frac{4n - m}{10}$ правил $\text{T} \rightarrow \text{aaaTbb}$, затем правило $\text{T} \rightarrow \text{c}$, а значит вывод однозначен, чтд.
+	
+	Т.о. ответ --- $\text{S} \rightarrow \text{aSbbbb | T}, \text{T} \rightarrow \text{aaaTbb | c}$.
+	
+	
+	\item[\fbox{3.}] Это язык из слов таких, что:
+	
+	\begin{enumerate}
+		\item Слово состоит из букв $a$ и $b$
+		\item Общее количество букв $a$ в слове в два раза больше общего количества букв $b$
+		\item На любом префиксе этого слова количество букв $a$ не меньше, чем удвоенное количество букв $b$
+	\end{enumerate}
+
+	$\Rightarrow$: любое слово из исходной грамматики соответствует правилам выше, это можно доказать по индукции по шагам вывода:
+	
+	Если шаг вывода --- $\text{F} \rightarrow \epsilon$, то правила выполняются
+	
+	Если шаг вывода --- $\text{F} \rightarrow \text{aFaFbF}$, то по индукции для трех внутренних $F$ правила выполняются, а значит верно, что в полученном в результате дальшейшего вывода слове общее число букв $a$ в два раза больше, чем число букв $b$ (мы добавили еще две буквы $a$ и одну $b$), и неравенства на всех префиксах тоже выполняются (раз выполняются для любых префиксов внутренних $\text{F}$, и к ним добавляются либо одна $a$, либо две $a$, либо две $a$ и одна $b$, а они ничего не испортят).
+	
+	$\Leftarrow$: теперь покажем, что любое слово, удовлетворяющее правилам выше, выводится из $F$. Сделаем это по индукции от длины слова: пусть исходное слово --- $w$. Если оно пустое, утверждение верно. Если же оно не пустое, выделим маинимальный его непустой префикс $w[0..i]$, количество букв $a$ на котором в два раза больше количества букв $b$ (такой найдется, т.к. подходит вся строка). Этот префикс обязан начинаться на $aa$ и заканчиваться на $b$; а подстрочка между этими $aa$ и $b$ обладает теми-же свойствами, что и вся строка, т.е. для нее можно применить предположение индукции. Остаток строки $w[i+1..]$ тоже обладает теми-же свойствами, значит его тоже можно вывести из $F$ по предположению индукции. Тогда слово $w$ можно вывести с помощью $\text{F} \rightarrow \text{aFaFbF} \rightarrow \text{a}\epsilon\text{aFbF} = \text{aaFbF}$.
+	
+	
+	\item[\fbox{4.}] Первая грамматика: $\text{F} \rightarrow \text{a | bF | cFF}$
+	
+	Вторую грамматику можно переписать: $\text{K} \rightarrow \text{aaK | abK | caK | cbK | a | c}$
+	
+	Можно нарисовать бесконечный автомат, который принимает пересечение этих двух языков (пояснение внизу):
+	
+	\begin{myauto}
+		\node[state,accepting] (S)                       {$T$};
+		\node[state]           (F_1)    [below=of S]     {$F_1$};
+		\node[state,initial]   (F_0)    [left=of F_1]    {$F_0$};
+		\node[state]           (FF_1)   [below=of F_1]   {$FF_1$};
+		\node[state]           (FF_0)   [left=of FF_1]   {$FF_0$};
+		\node[state]           (FFF_1)  [below=of FF_1]  {$FFF_1$};
+		\node[state]           (FFF_0)  [left=of FFF_1]  {$FFF_0$};
+		\node[state]           (FFFF_1) [below=of FFF_1] {$FFFF_1$};
+		\node[state]           (FFFF_0) [left=of FFFF_1] {$FFFF_0$};
+		\node[state]           (FFFFF_1)[below=of FFFF_1]{$...$};
+		\node[state]           (FFFFF_0)[left=of FFFFF_1]{$...$};
+		
+		\path[->]
+		(F_0)   edge [bend left=20]  node [above] {$a$} (S)
+		        edge [bend right=20] node [below] {$c$} (FF_1)
+		(FF_0)  edge [bend left=20]  node [above] {$a$} (F_1)
+       		    edge [bend right=20] node [below] {$c$} (FFF_1)
+        (FFF_0) edge [bend left=20]  node [above] {$a$} (FF_1)
+                edge [bend right=20] node [below] {$c$} (FFFF_1)
+        (FFFF_0)edge [bend left=20]  node [above] {$a$} (FFF_1)
+                edge [bend right=20] node [below] {$c$} (FFFFF_1)
+        (F_1)
+                edge                 node [above] {$b$} (F_0)
+        (FF_1)  edge [bend right=20] node [above] {$a$} (F_0)
+                edge                 node [above] {$b$} (FF_0)
+        (FFF_1) edge [bend right=20] node [above] {$a$} (FF_0)
+                edge                 node [above] {$b$} (FFF_0)
+        (FFFF_1) edge [bend right=20] node [above] {$a$} (FFF_0)
+                edge                 node [above] {$b$} (FFFF_0)
+		;
+	\end{myauto}
+
+	Этот автомат --- пересечение бесконечного автомата для первого языка и конечного автомата для второго:
+	
+	\begin{enumerate}
+		\item первый столбец вершин --- если мы находимся в $K$ из второй грамматики, т.е. уже выписали четное число букв и можем ходить только по $a$ или $c$;
+		\item второй столбец вершин --- если мы находимся в $M$ из второй грамматики, т.е. уже выписали нечетное число букв и можем ходить только по $a$ или $b$.
+		\item строка грамматики $F^n$ обозначает состояние, в котором мы уже выписали какой-то префикс грамматики, и осталось вывести какой-то остаток из нетерминала $F$ $n$ раз (в том числе вершина $T$ --- когда нам осталось вывести что-нибудь из нуля нетерминалов $F$, т.е. ничего; это вершиниа терминальная)
+	\end{enumerate}
+
+	Например, вывод $F \rightarrow cFF \rightarrow cbFF \rightarrow cbcFFF \rightarrow cbcbFFF \rightarrow cbcbaFF \rightarrow cbcbaaF \rightarrow cbcbaaa$ соответствует пути в автомате $F_0 \rightarrow FF_1 \rightarrow FF_0 \rightarrow FFF_1 \rightarrow FFF_0 \rightarrow FF1 \rightarrow F_0 \rightarrow T$ (получается, состояние --- количество $F$ в конце + четность количества уже выведенных терминалов в начале)
+	
+	По этому бесконечному автомату мы хотим построить КС грамматику. Для этого обозначим $X$ - все пути из какой-то вершины слева в себя, при этом не переходя в строки выше исходной (т.е. в вершины с меньшим количеством $F$, чем в начале), $Y$ - все пути из какой-то вершины справа в себя (тоже не заходящие выше). Вычислим $X$ и $Y$ рекурсивно:
+	
+	Из автомата можно вывести, перебирая все пути:
+	
+	$\begin{cases}
+	\text{X} \rightarrow \epsilon \text{ | cYaX | cYbXaYbX}\\
+	\text{Y} \rightarrow \epsilon \text{ | bXcYbXaY}
+	\end{cases}$
+	
+	Терминальное состояние достижимо только из $Xa$.
+	
+	Т.о. мой ответ:
+	
+	$\begin{cases}
+	\text{S} \rightarrow \text{Xa}\\
+	\text{X} \rightarrow \epsilon \text{ | cYaX | cYbXaYbX}\\
+	\text{Y} \rightarrow \epsilon \text{ | bXcYbXaY}
+	\end{cases}$
+	
+	
+	
+\end{description}
+
+\end{document}
