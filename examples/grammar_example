@@ -1,3 +1,4 @@
-S -> R,S | R
-R -> a,S,b | c,R,d
-R -> a,b | c,d | ϵ
+S -> E 
+E -> E,p,T | T
+T -> T,m,F | F
+F -> n | l,E,r

@@ -15,7 +15,7 @@ if __name__ == '__main__':
         raise Exception(err)
 
     with open(args.s, 'r') as f:
-        s = ''.join(f.readlines()).split(',')
+        s = f.readline().strip().split(',')
 
     g, _ = get_chomsky_normal_form(g)
     res, table = cyk(g, s)
